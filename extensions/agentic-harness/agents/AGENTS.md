@@ -44,6 +44,9 @@ jeo-code; the remaining agents are jeo_pi-native execution and review roles.
 - `tests/spec-stack-docs.test.ts` validates the four spec-stack role contracts
   and tool restrictions.
 - `tests/agents-registry.test.ts` keeps this table in sync with the directory.
+- `tests/agents-capability.test.ts` enforces the read-only/write capability
+  column above against each agent's `tools` frontmatter (reflected from
+  jeo-code's "non-mutating agents MUST NOT be given mutating tools" rule).
 
 ## Dependencies
 

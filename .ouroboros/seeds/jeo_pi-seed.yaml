@@ -56,3 +56,5 @@ evolution_log:
     note: "Reflect jeo-code deep-interview --auto: document non-interactive clarification mode in spec-stack Interview stage (self-answers from context/assumptions, records them, never bypasses the Ambiguity <= 0.2 gate) + test assertions. Verified vitest extensions = 815 pass."
   - rev: 14
     note: "Doc sync: update docs/jeo-pi/spec-stack.md mapping, README banner, and skills/AGENTS.md Purpose+Testing to reflect the complete five-skill spec-* family (spec-stack/deep-dive/blueprint/execute/verify <- deep-interview/deep-dive/ralplan/team/ultragoal). No code change; vitest 815 pass."
+  - rev: 15
+    note: "Reflect jeo-code agents/AGENTS.md discipline ('non-mutating agents MUST NOT be given mutating tools'): add tests/agents-capability.test.ts enforcing the read-only/write capability column in agents/AGENTS.md against each agent's tools frontmatter (read-only roles declare a restricted tools list with no edit/write; write roles keep mutating access). Verified vitest extensions = 818 pass."
