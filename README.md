@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <strong>Engineering discipline, spec-first orchestration, and power-user tools for the <a href="https://github.com/badlogic/pi-mono">pi</a> coding agent.</strong>
+  <strong>Engineering discipline, spec-first orchestration, and power-user tools for the <a href="https://pi.dev">pi</a> coding agent.</strong>
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
   <a href="https://github.com/akillness/jeo-pi/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/akillness/jeo-pi/release.yml?branch=main&style=flat&colorA=17141C&label=release%20pipeline" alt="Release pipeline"></a>
   <a href="https://akillness.github.io/jeo-pi/"><img src="https://img.shields.io/badge/docs-pages-56C5E8?style=flat&colorA=17141C" alt="Docs site"></a>
   <a href="package.json"><img src="https://img.shields.io/badge/license-MIT-56C5E8?style=flat&colorA=17141C" alt="MIT license"></a>
-  <a href="https://github.com/badlogic/pi-mono"><img src="https://img.shields.io/badge/pi-0.72.x-8B5CF6?style=flat&colorA=17141C" alt="pi 0.72.x"></a>
+  <a href="https://github.com/earendil-works/pi"><img src="https://img.shields.io/npm/v/@earendil-works/pi-coding-agent?style=flat&colorA=17141C&color=8B5CF6&label=pi" alt="pi (earendil-works)"></a>
   <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-D6409F?style=flat&colorA=17141C&logo=typescript&logoColor=white" alt="TypeScript"></a>
 </p>
 
@@ -114,29 +114,78 @@ Eight bundled extensions cooperate around the agentic-harness core:
 
 ## Installation
 
-jeo_pi installs and runs as a **standalone pi package** — you do **not** need to clone, install, or
-configure [roach-pi](https://github.com/tmdgusya/roach-pi). jeo_pi began as a fork but ships its own
-bundled extensions, agents, skills, **JEO PI** banner, and `/setup` flow.
+jeo_pi is a **pi package** layered on top of the [`pi`](https://pi.dev) coding agent — now maintained
+at [earendil-works/pi](https://github.com/earendil-works/pi) and published to npm as
+[`@earendil-works/pi-coding-agent`](https://www.npmjs.com/package/@earendil-works/pi-coding-agent).
+You do **not** need to clone, install, or configure
+[roach-pi](https://github.com/tmdgusya/roach-pi): jeo_pi began as a fork but ships its own bundled
+extensions, agents, skills, **JEO PI** banner, and `/setup` flow.
 
-**Prerequisites:** the [`pi`](https://github.com/badlogic/pi-mono) coding agent (`0.72.x`), plus
-Node.js `>= 22` or Bun `>= 1.3` if you build from source.
+**Prerequisites:** Node.js `>= 22.19.0` (or Bun `>= 1.3` to build jeo_pi from source) and a terminal.
 
-### Install from GitHub (recommended)
+### 1. Install pi
 
 ```bash
-pi install git:github.com/akillness/jeo-pi
+# npm (recommended)
+npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+
+# …or the official installer
+curl -fsSL https://pi.dev/install.sh | sh
 ```
 
-### Install from source
+`--ignore-scripts` is intentional — pi needs no dependency lifecycle scripts for a normal install.
+Then confirm the CLI is on your `PATH`:
+
+```bash
+pi --version            # 0.80.x or newer
+```
+
+### 2. Authenticate a model provider
+
+Pick one. Use a subscription via `/login`:
+
+```bash
+pi
+/login                  # then select Anthropic / OpenAI / Copilot / …
+```
+
+…or export an API key before launching:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...   # or OPENAI_API_KEY, GEMINI_API_KEY, …
+pi
+```
+
+### 3. Install jeo_pi
+
+```bash
+# From GitHub (recommended)
+pi install git:github.com/akillness/jeo-pi
+
+# …pin to a tag or commit
+pi install git:github.com/akillness/jeo-pi@v1.12.0
+```
+
+<details><summary>Install from a local checkout (for development)</summary>
 
 ```bash
 git clone https://github.com/akillness/jeo-pi.git
 cd jeo-pi
-npm install          # or: bun install
-pi install .         # register this checkout as a local pi package
+npm install             # or: bun install
+pi install .            # register this checkout as a user pi package
+pi install . -l         # …or project-local (.pi/settings.json)
+```
+</details>
+
+Confirm the package registered:
+
+```bash
+pi list                 # lists: git:github.com/akillness/jeo-pi
 ```
 
-Restart `pi`, then run setup once:
+### 4. Run setup once
+
+Restart `pi`, then:
 
 ```bash
 /setup
@@ -145,6 +194,14 @@ Restart `pi`, then run setup once:
 `/setup` writes `quietStartup: true` to `~/.pi/agent/settings.json` so jeo_pi can own the **JEO PI**
 startup banner instead of duplicating pi's default extension listing. It can also offer to star
 [`akillness/jeo-pi`](https://github.com/akillness/jeo-pi) — never roach-pi.
+
+### Update / remove
+
+```bash
+pi update git:github.com/akillness/jeo-pi   # update jeo_pi to the latest commit
+pi update --all                             # update pi and every installed package
+pi remove git:github.com/akillness/jeo-pi   # uninstall jeo_pi
+```
 
 > [!WARNING]
 > If you have the `superpowers` skill installed, remove it before using jeo_pi. It can define skill names that collide with jeo_pi's bundled `spec-*` and `agentic-*` skills, and pi does not guarantee extension override order for duplicate skills.
