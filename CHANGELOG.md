@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.18.0](https://github.com/akillness/jeo-pi/compare/v1.17.0...v1.18.0) (2026-06-29)
+
+### Features
+
+* **welcome:** kern the boot banner into one cohesive JEOPI wordmark ([a1910fc](https://github.com/akillness/jeo-pi/commit/a1910fc9b554b5d6d53bd4f9f8d5a61a93a2d07f))
+
+### Tests
+
+* **provider-auth:** add manual LIVE Anthropic /v1/messages verification ([eaca43d](https://github.com/akillness/jeo-pi/commit/eaca43dcc0148949885b82ad4ef90eec6e578df4))
+* **provider-auth:** add manual LIVE Codex (ChatGPT OAuth) verification ([da124b6](https://github.com/akillness/jeo-pi/commit/da124b6615ec084774b1fc15c3db5ad3c7fd49b3))
+
 ## [1.17.0](https://github.com/akillness/jeo-pi/compare/v1.16.0...v1.17.0) (2026-06-29)
 
 ### Features
