@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.17.0](https://github.com/akillness/jeo-pi/compare/v1.16.0...v1.17.0) (2026-06-29)
+
+### Features
+
+* **provider-auth:** add Anthropic OAuth provider, refactor loader, fix Antigravity catalog ([f5b9c60](https://github.com/akillness/jeo-pi/commit/f5b9c60842fa067b4dff7e874c0c2e39dba8dfa6))
+
+### Documentation
+
+* **assets:** regenerate jeo_pi mascot with robed mage look ([687e837](https://github.com/akillness/jeo-pi/commit/687e837bfe588f2a677cfef891efbf3366870907))
+* document branded OAuth sign-in + Antigravity provider for /login ([b1dec2b](https://github.com/akillness/jeo-pi/commit/b1dec2b0b69d2dedc387e8f4bb86d59253a3124e))
+
 ## [1.16.0](https://github.com/akillness/jeo-pi/compare/v1.15.1...v1.16.0) (2026-06-29)
 
 ### Features
