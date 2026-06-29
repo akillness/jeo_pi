@@ -1,5 +1,5 @@
 <svg width="1080" height="520" viewBox="0 0 1080 520" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
-  <title id="title">ROACH PI workflow preview</title>
+  <title id="title">jeo_pi workflow preview</title>
   <desc id="desc">A terminal-style workflow preview showing the clarify to goal flow: deep clarification, Goal Contract, automatic goal execution, and verifier PASS.</desc>
   <rect width="1080" height="520" rx="28" fill="#0B1020"/>
   <rect x="34" y="32" width="1012" height="456" rx="22" fill="#111827" stroke="#334155"/>

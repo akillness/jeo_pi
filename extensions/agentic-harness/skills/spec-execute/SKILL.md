@@ -53,6 +53,9 @@ Blueprint tasks
 - Task-level isolation: a task's changes and verification stand on their own.
 - No blind retries: a repeated failure must change the next attempt's inputs.
 - Verify-before-done: do not weaken the acceptance criteria to make a check pass.
+- Running task state: keep the loop's goal, constraints, confirmed evidence,
+  failed approaches with their cause, and open candidates updated as you go,
+  instead of re-reading the whole history before each task.
 
 ## Handoff
 

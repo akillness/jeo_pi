@@ -173,6 +173,9 @@ describe("spec-execute skill docs reflected from jeo-code team", () => {
     expect(src).toMatch(/verify one before starting the next/i);
     expect(src).toContain("feed the facts");
     expect(src).toMatch(/no blind retries/i);
+    // Running task state discipline reflected from jeo-code working discipline.
+    expect(src).toMatch(/running task state/i);
+    expect(src).toMatch(/failed approaches with their cause/i);
 
     // It consumes a blueprint and uses the executor's output contract.
     expect(src).toContain("spec-blueprint");
