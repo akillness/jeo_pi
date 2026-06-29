@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0 (2026-06-29)
+
+### Features
+
+* **agentic-harness:** reflect jeo-code spec-stack workflow and role prompts ([b17b983](https://github.com/akillness/jeo_pi/commit/b17b9834fcd2485308e37415cb178ef0d1c43fff))
+* import roach-pi as jeo_pi base ([78ff92e](https://github.com/akillness/jeo_pi/commit/78ff92ea972ebed687e02cc01634b60917e42da5))
+
+### Documentation
+
+* **jeo-pi:** document spec-stack reflection + fork attribution ([1f31348](https://github.com/akillness/jeo_pi/commit/1f31348f8a19ab7d11135790b0d1ef8f97488cef))
+
+### CI
+
+* add reproducible verification workflow + record seed evolution ([b4f82f8](https://github.com/akillness/jeo_pi/commit/b4f82f89f5cd639ff8c55f6abd1ee814139a450b))
+* fix Release npm ci lockfile sync and enable GitHub Pages ([346db74](https://github.com/akillness/jeo_pi/commit/346db7468907e7d7bc292437721b2ae46ae33d40))
+
 ## [1.39.0](https://github.com/tmdgusya/roach-pi/compare/v1.38.0...v1.39.0) (2026-06-26)
 
 ### Features
