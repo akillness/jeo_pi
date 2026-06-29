@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.16.0](https://github.com/akillness/jeo-pi/compare/v1.15.1...v1.16.0) (2026-06-29)
+
+### Features
+
+* **provider-auth:** stamp discovered projectId onto Antigravity models after OAuth (modifyModels) ([58b4f1e](https://github.com/akillness/jeo-pi/commit/58b4f1e19d44e9f6a3829600a0eccb30c48b5704))
+
 ## [1.15.1](https://github.com/akillness/jeo-pi/compare/v1.15.0...v1.15.1) (2026-06-29)
 
 ### Bug Fixes
