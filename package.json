@@ -23,7 +23,8 @@
       "node_modules/@code-yeongyu/pi-nested-agents-md/src/index.ts",
       "node_modules/pi-lsp-client/src/index.ts",
       "extensions/pi-mcp-adapter/index.ts",
-      "extensions/pi-code-previews/index.ts"
+      "extensions/pi-code-previews/index.ts",
+      "extensions/provider-auth/index.ts"
     ]
   },
   "dependencies": {
