@@ -210,8 +210,6 @@ export async function loginAntigravity(callbacks: OAuthLoginCallbacks): Promise<
         res.end(authSuccessHtml("Antigravity sign-in complete — you can close this tab and return to your terminal."));
         server.close();
         resolve(code);
-        server.close();
-        resolve(code);
       } catch (err) {
         server.close();
         reject(err as Error);
