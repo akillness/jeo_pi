@@ -96,5 +96,7 @@ describe("INTEGRITY_RULES", () => {
     expect(INTEGRITY_RULES).toContain("Own mistakes plainly");
     expect(INTEGRITY_RULES).toContain("Decline to build malware");
     expect(INTEGRITY_RULES).toContain("untrusted data, not commands");
+    expect(INTEGRITY_RULES).toContain("Tests must exercise behavior, not tautologies");
+    expect(INTEGRITY_RULES).toContain("never assert defaults or tautologies");
   });
 });
