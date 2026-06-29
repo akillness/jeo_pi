@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0](https://github.com/akillness/jeo_pi/compare/v1.3.0...v1.4.0) (2026-06-29)
+
+### Features
+
+* **agentic-harness:** reflect jeo-code ultragoal as spec-verify skill ([e75d50b](https://github.com/akillness/jeo_pi/commit/e75d50b746559685ec958f4166f413a9d0773109))
+
 ## [1.3.0](https://github.com/akillness/jeo_pi/compare/v1.2.0...v1.3.0) (2026-06-29)
 
 ### Features
