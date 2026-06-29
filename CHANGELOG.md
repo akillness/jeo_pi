@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0](https://github.com/akillness/jeo_pi/compare/v1.2.0...v1.3.0) (2026-06-29)
+
+### Features
+
+* **agentic-harness:** reflect jeo-code team as spec-execute skill ([47adcbe](https://github.com/akillness/jeo_pi/commit/47adcbee1386f321c11ac37ae4caf5f8b2bbbc69))
+
 ## [1.2.0](https://github.com/akillness/jeo_pi/compare/v1.1.0...v1.2.0) (2026-06-29)
 
 ### Features
