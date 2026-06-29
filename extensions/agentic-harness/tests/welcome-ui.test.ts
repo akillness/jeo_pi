@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@mariozechner/pi-coding-agent", () => ({
   keyHint: (key: string, description?: string) => `${key}${description ? ` ${description}` : ""}`,
@@ -38,6 +38,12 @@ const SHIMMER_HIGHLIGHT_ANSI = "\x1b[38;2;241;248;242m";
 function render(component: { render(width: number): string[] }): string {
   return component.render(120).join("\n");
 }
+
+beforeEach(() => {
+  // welcomeVisible is module-level state shared across tests; force a known
+  // hidden baseline so each toggle assertion is order-independent.
+  dismissWelcomeHeader(ui() as any);
+});
 
 afterEach(() => {
   vi.useRealTimers();
@@ -100,7 +106,7 @@ describe("welcome header controller", () => {
     expect(requestRender).not.toHaveBeenCalled();
   });
 
-  it("shows, dismisses, and toggles the header", () => {
+  it("shows, dismisses, and round-trips the header via toggle", () => {
     const mockUi = ui();
 
     showWelcomeHeader(mockUi as any);
@@ -111,8 +117,14 @@ describe("welcome header controller", () => {
     expect(isWelcomeVisible()).toBe(false);
     expect(mockUi.setHeader).toHaveBeenLastCalledWith(undefined);
 
+    // Full toggle round-trip: hidden -> shown (true) -> hidden (false).
     expect(toggleWelcomeHeader(mockUi as any)).toBe(true);
     expect(isWelcomeVisible()).toBe(true);
+    expect(mockUi.setHeader).toHaveBeenLastCalledWith(expect.any(Function));
+
+    expect(toggleWelcomeHeader(mockUi as any)).toBe(false);
+    expect(isWelcomeVisible()).toBe(false);
+    expect(mockUi.setHeader).toHaveBeenLastCalledWith(undefined);
   });
 
   it("registers /welcome command for show, hide, and toggle", async () => {
@@ -125,15 +137,44 @@ describe("welcome header controller", () => {
 
     const mockUi = ui();
     await command.handler("off", { ui: mockUi });
+    expect(isWelcomeVisible()).toBe(false);
     expect(mockUi.setHeader).toHaveBeenLastCalledWith(undefined);
     expect(mockUi.notify).toHaveBeenLastCalledWith("Welcome header hidden", "info");
 
     await command.handler("on", { ui: mockUi });
+    expect(isWelcomeVisible()).toBe(true);
     expect(mockUi.setHeader).toHaveBeenLastCalledWith(expect.any(Function));
     expect(mockUi.notify).toHaveBeenLastCalledWith("Welcome header shown", "info");
 
     await command.handler("toggle", { ui: mockUi });
+    expect(isWelcomeVisible()).toBe(false);
     expect(mockUi.setHeader).toHaveBeenLastCalledWith(undefined);
     expect(mockUi.notify).toHaveBeenLastCalledWith("Welcome header hidden", "info");
+
+    // Bare toggle (no args) flips from hidden back to shown.
+    await command.handler("", { ui: mockUi });
+    expect(isWelcomeVisible()).toBe(true);
+    expect(mockUi.notify).toHaveBeenLastCalledWith("Welcome header shown", "info");
+  });
+
+  it("honors every /welcome alias for hide and show", async () => {
+    const commands = new Map<string, any>();
+    registerWelcomeCommand({ registerCommand: (name: string, def: any) => commands.set(name, def) } as any);
+    const command = commands.get("welcome");
+    const mockUi = ui();
+
+    for (const hideAlias of ["off", "hide", "dismiss", "OFF", " Hide "]) {
+      showWelcomeHeader(mockUi as any);
+      await command.handler(hideAlias, { ui: mockUi });
+      expect(isWelcomeVisible()).toBe(false);
+      expect(mockUi.notify).toHaveBeenLastCalledWith("Welcome header hidden", "info");
+    }
+
+    for (const showAlias of ["on", "show", "restore", "ON", " Show "]) {
+      dismissWelcomeHeader(mockUi as any);
+      await command.handler(showAlias, { ui: mockUi });
+      expect(isWelcomeVisible()).toBe(true);
+      expect(mockUi.notify).toHaveBeenLastCalledWith("Welcome header shown", "info");
+    }
   });
 });
