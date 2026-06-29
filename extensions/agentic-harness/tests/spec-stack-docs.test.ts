@@ -80,3 +80,34 @@ describe("spec-stack role agents reflected from jeo-code", () => {
     expect(executor.tools ?? []).toHaveLength(0);
   });
 });
+
+describe("spec-deep-dive skill docs reflected from jeo-code", () => {
+  it("documents the trace → inject → clarify two-stage pipeline", () => {
+    const src = readSkill("spec-deep-dive");
+
+    expect(src).toContain("name: spec-deep-dive");
+    expect(src).toMatch(/description:.*trace/i);
+
+    // The pipeline stages must appear in order: trace (why) then clarify (what).
+    const traceIdx = src.indexOf("Stage 1 — Trace");
+    const injectIdx = src.indexOf("Stage 2 — 3-point injection");
+    const clarifyIdx = src.indexOf("Stage 3 — Clarify");
+    expect(traceIdx).toBeGreaterThan(-1);
+    expect(injectIdx).toBeGreaterThan(traceIdx);
+    expect(clarifyIdx).toBeGreaterThan(injectIdx);
+
+    // Three parallel investigation lanes are the trace contract.
+    for (const lane of ["Map", "Unknowns", "Root cause"]) {
+      expect(src).toContain(lane);
+    }
+
+    // It must bridge the existing debugging + clarification skills, not replace them.
+    expect(src).toContain("agentic-systematic-debugging");
+    expect(src).toContain("agentic-clarification");
+
+    // Same ambiguity gate and verify-before-done invariant as spec-stack.
+    expect(src).toContain("Ambiguity ≤ 0.2");
+    expect(src).toContain("Goal Contract");
+    expect(src).toContain("do not weaken the acceptance criteria");
+  });
+});

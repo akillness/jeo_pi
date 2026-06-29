@@ -37,3 +37,7 @@ evolution_log:
     note: "Docs + attribution; knowledge filed in llm-wiki report and obsidian Projects/jeo_pi (commit 1f31348)."
   - rev: 4
     note: "Add CI workflow running bun run test + tsc build verification. Verified canonical runner: npm test=728 pass, tsc --noEmit=0 errors."
+  - rev: 5
+    note: "Release workflow lockfile sync (npm ci) + GitHub Pages enablement (commit 346db74)."
+  - rev: 6
+    note: "Reflect jeo-code deep-dive as spec-deep-dive skill (trace -> inject -> clarify) + docs test. Verified vitest extensions = 805 pass."
