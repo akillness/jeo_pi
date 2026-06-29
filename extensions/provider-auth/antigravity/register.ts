@@ -6,7 +6,7 @@
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import type { AssistantMessageEventStream, Context, Model, SimpleStreamOptions } from "@mariozechner/pi-ai";
+import type { Api, AssistantMessageEventStream, Context, Model, OAuthCredentials, SimpleStreamOptions } from "@mariozechner/pi-ai";
 import { ANTIGRAVITY_DAILY_ENDPOINT, streamAntigravity } from "./cca.js";
 import { getAntigravityApiKey, loginAntigravity, refreshAntigravityToken } from "./oauth.js";
 
@@ -82,6 +82,20 @@ export function toAntigravityModel(id: string): AntigravityModel {
 export const ANTIGRAVITY_MODELS: AntigravityModel[] = ANTIGRAVITY_MODEL_IDS.map(toAntigravityModel);
 
 /**
+ * OAuth `modifyModels` hook. After login, pi calls this with the persisted
+ * credentials so we can stamp the discovered Cloud Code Assist `projectId` onto
+ * every Antigravity model. The stream handler then reads it from the model and
+ * skips the ~2s project-discovery round-trip that would otherwise run on each
+ * fresh access token (discovery stays as the fallback for first-login turns,
+ * where modifyModels has not run yet).
+ */
+export function applyAntigravityProject(models: Model<Api>[], credentials: OAuthCredentials): Model<Api>[] {
+  const projectId = typeof credentials.projectId === "string" ? credentials.projectId : undefined;
+  if (!projectId) return models;
+  return models.map((m) => (m.provider === ANTIGRAVITY_PROVIDER ? ({ ...m, projectId } as Model<Api>) : m));
+}
+
+/**
  * Wire Antigravity into pi. Safe to call during extension load — registerProvider
  * is queued until the runner binds its context.
  */
@@ -101,12 +115,16 @@ export function registerAntigravityProvider(pi: ExtensionAPI): void {
         maxTokens: options?.maxTokens,
         reasoning: options?.reasoning,
         signal: options?.signal,
+        // Reuse the projectId stamped by modifyModels at login time; falls back
+        // to live discovery inside streamAntigravity when absent.
+        projectId: (model as { projectId?: string }).projectId,
       }),
     oauth: {
       name: "Google Antigravity (Cloud Code Assist agent)",
       login: loginAntigravity,
       refreshToken: refreshAntigravityToken,
       getApiKey: getAntigravityApiKey,
+      modifyModels: applyAntigravityProject,
     },
   });
 }

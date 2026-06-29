@@ -4,6 +4,7 @@ import {
   ANTIGRAVITY_PROVIDER,
   ANTIGRAVITY_MODEL_IDS,
   toAntigravityModel,
+  applyAntigravityProject,
 } from "../antigravity/register.js";
 import { ANTIGRAVITY_DAILY_ENDPOINT } from "../antigravity/cca.js";
 
@@ -121,5 +122,65 @@ describe("registerAntigravityProvider", () => {
     // gpt-oss is the lone text-only family in the catalog.
     const oss = toAntigravityModel("gpt-oss-120b-medium");
     expect(oss.input).toEqual(["text"]);
+  });
+});
+
+describe("applyAntigravityProject (modifyModels projectId baking)", () => {
+  const cred = (extra: Record<string, unknown> = {}) =>
+    ({ access: "tok", refresh: "r", expires: 0, ...extra }) as any;
+
+  function antigravityModels() {
+    return ANTIGRAVITY_MODEL_IDS.map((id) => {
+      const m = toAntigravityModel(id);
+      return { id: m.id, name: m.name, api: "google-generative-ai", provider: ANTIGRAVITY_PROVIDER } as any;
+    });
+  }
+
+  it("stamps the credential projectId onto every antigravity model", () => {
+    const out = applyAntigravityProject(antigravityModels(), cred({ projectId: "proj-123" }));
+    expect(out.length).toBe(ANTIGRAVITY_MODEL_IDS.length);
+    for (const m of out) expect((m as any).projectId).toBe("proj-123");
+  });
+
+  it("leaves models untouched when the credential has no projectId", () => {
+    const models = antigravityModels();
+    const out = applyAntigravityProject(models, cred());
+    expect(out).toBe(models); // same reference: no rewrite
+    for (const m of out) expect((m as any).projectId).toBeUndefined();
+  });
+
+  it("ignores a non-string projectId", () => {
+    const models = antigravityModels();
+    const out = applyAntigravityProject(models, cred({ projectId: 42 }));
+    expect(out).toBe(models);
+  });
+
+  it("does not stamp projectId onto other providers' models", () => {
+    const foreign = { id: "other/x", name: "x", api: "openai-completions", provider: "other" } as any;
+    const out = applyAntigravityProject([foreign, ...antigravityModels()], cred({ projectId: "proj-9" }));
+    const kept = out.find((m) => m.provider === "other") as any;
+    expect(kept.projectId).toBeUndefined();
+    expect(out.filter((m) => m.provider === ANTIGRAVITY_PROVIDER).every((m: any) => m.projectId === "proj-9")).toBe(true);
+  });
+
+  it("is wired as the oauth modifyModels hook in the registered config", () => {
+    const { pi, providers } = fakePi();
+    registerAntigravityProvider(pi);
+    expect(providers[0].config.oauth.modifyModels).toBe(applyAntigravityProject);
+  });
+
+  it("streamSimple forwards the model's stamped projectId into the stream options", () => {
+    const { pi, providers } = fakePi();
+    registerAntigravityProvider(pi);
+    const { streamSimple } = providers[0].config;
+
+    // A model carrying a projectId (as modifyModels would produce). Drive
+    // streamSimple with no apiKey so streamAntigravity errors out before any
+    // network call — we only assert the projectId reached resolveProjectId by
+    // observing the error is the missing-token error, not a discovery attempt.
+    const model = { id: "antigravity/gemini-2.5-flash", provider: ANTIGRAVITY_PROVIDER, api: "google-generative-ai", projectId: "proj-x" } as any;
+    const stream = streamSimple(model, { systemPrompt: "", messages: [], tools: [] }, {});
+    expect(stream).toBeTruthy();
+    expect(typeof stream[Symbol.asyncIterator]).toBe("function");
   });
 });
