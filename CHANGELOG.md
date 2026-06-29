@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0](https://github.com/akillness/jeo_pi/compare/v1.4.0...v1.5.0) (2026-06-29)
+
+### Features
+
+* **agentic-harness:** document deep-interview --auto non-interactive gate in spec-stack ([16a37c8](https://github.com/akillness/jeo_pi/commit/16a37c82cba221cf0e8ef03a5856dd01eb58050e))
+
 ## [1.4.0](https://github.com/akillness/jeo_pi/compare/v1.3.0...v1.4.0) (2026-06-29)
 
 ### Features
