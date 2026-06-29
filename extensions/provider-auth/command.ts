@@ -7,8 +7,8 @@
  *   /provider ollama [url] [m...]  → configure a local Ollama endpoint
  *   /provider lmstudio [url] [m..] → configure a local LM Studio endpoint
  *   /provider api <name> <url> ... → configure any OpenAI-compatible "other API"
- *   /provider antigravity          → register Antigravity (then /login antigravity)
- *   /provider claude               → guidance for Claude (built-in /login)
+ *   /provider antigravity          → register Antigravity (then /login → Use a subscription → Google Antigravity)
+ *   /provider claude               → guidance for Claude (built-in /login OAuth subscription)
  *   /provider remove <name>        → drop a custom provider from models.json
  */
 
@@ -104,8 +104,8 @@ export function statusReport(config: ModelsConfig): string {
   const custom = listProviders(config);
   const lines: string[] = [];
   lines.push("Provider authentication & setup (jeo_pi):");
-  lines.push("  • claude       — built-in: run /login (Anthropic) or set ANTHROPIC_API_KEY");
-  lines.push("  • antigravity  — run /provider antigravity, then /login antigravity");
+  lines.push("  • claude       — built-in OAuth subscription: /login → Use a subscription → Anthropic (Claude Pro/Max), or set ANTHROPIC_API_KEY");
+  lines.push("  • antigravity  — OAuth subscription: run /provider antigravity, then /login → Use a subscription → Google Antigravity");
   lines.push("  • ollama       — run /provider ollama [baseUrl] [model...]");
   lines.push("  • lmstudio     — run /provider lmstudio [baseUrl] [model...]");
   lines.push("  • other API    — run /provider api <name> <baseUrl> [--api ...] [--key ENV] [model...]");

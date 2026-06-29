@@ -23,7 +23,7 @@ import {
 import { registerAntigravityProvider } from "./antigravity/register.js";
 
 export default function providerAuthExtension(pi: ExtensionAPI): void {
-  // Make Antigravity loginable immediately (so `/login antigravity` works).
+  // Register Antigravity eagerly so it appears under /login → "Use a subscription".
   registerAntigravityProvider(pi);
 
   pi.registerCommand("provider", {
@@ -43,7 +43,7 @@ export default function providerAuthExtension(pi: ExtensionAPI): void {
 
       if (action.kind === "claude") {
         ctx.ui.notify(
-          "Claude is built in. Run /login and choose Anthropic (Claude Pro/Max OAuth), or set ANTHROPIC_API_KEY. Then pick a model with /model.",
+          "Claude is built in. Run /login → \"Use a subscription\" → Anthropic (Claude Pro/Max OAuth), or run /login → \"Use an API key\" to enter ANTHROPIC_API_KEY. Then pick a model with /model.",
           "info",
         );
         return;
@@ -52,7 +52,7 @@ export default function providerAuthExtension(pi: ExtensionAPI): void {
       if (action.kind === "antigravity") {
         registerAntigravityProvider(pi);
         ctx.ui.notify(
-          "Antigravity registered. Run /login and choose Google Antigravity to authenticate, then pick antigravity/* with /model.",
+          "Antigravity registered. Run /login → \"Use a subscription\" → Google Antigravity (Cloud Code Assist agent) to authenticate, then pick antigravity/* with /model.",
           "info",
         );
         return;

@@ -1,6 +1,7 @@
 /**
  * Register the Antigravity provider with pi: the borrowed Google Cloud Code
- * Assist OAuth login (so `/login antigravity` works) plus a custom streamSimple
+ * Assist OAuth login (so Antigravity shows under /login → "Use a subscription")
+ * plus a custom streamSimple
  * handler that serves the antigravity/* models over the CCA proxy.
  */
 
