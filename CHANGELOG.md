@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.0](https://github.com/akillness/jeo-pi/compare/v1.12.0...v1.13.0) (2026-06-29)
+
+### Features
+
+* **agentic-harness:** forge a jeo_pi persona into the top-level agent system prompt ([52d5723](https://github.com/akillness/jeo-pi/commit/52d5723e27b23b212e90f207f7fabadfa2bcbdc4))
+* **provider-auth:** align login messaging with pi's /login subscription flow ([a9ce753](https://github.com/akillness/jeo-pi/commit/a9ce75390b51f1d131fac868dc970869da88e97a))
+
+### Documentation
+
+* **assets:** blend jeo-code SD persona with roach-pi katydid traits ([0eef7ba](https://github.com/akillness/jeo-pi/commit/0eef7ba99c9729e3cbb2b50df9d7276210606c3e))
+* **assets:** redraw README mascot as an SD chibi robot ([f4b5f02](https://github.com/akillness/jeo-pi/commit/f4b5f02f5ff4c03ad0e388af9881fb22901b7073))
+* **assets:** refine SD mascot — waving pose, chest pi badge, cleaner face ([d08e4a6](https://github.com/akillness/jeo-pi/commit/d08e4a6e4c87ebb432d703bb11eeb82dd098417d))
+* **assets:** regenerate jeo_pi mascot via god-tibo-imagen ([4d90bb2](https://github.com/akillness/jeo-pi/commit/4d90bb2863581a3b207888639a5d6f9f3c740acf))
+* **assets:** restyle mascot as SD character after jeo-code persona ([0483f84](https://github.com/akillness/jeo-pi/commit/0483f840aed52276886fdfd99c3ff5525540f6a7))
+* **readme:** strengthen install guide for earendil-works/pi ([8c9c2f2](https://github.com/akillness/jeo-pi/commit/8c9c2f28908f7e8a4884e4b3e362e3f241f891a9))
+
+### Tests
+
+* **provider-auth:** cover extension wiring (index + antigravity register) ([b28e8b9](https://github.com/akillness/jeo-pi/commit/b28e8b937b79ac3124db5f963d4120f640609b14))
+
 ## [1.12.0](https://github.com/akillness/jeo-pi/compare/v1.11.0...v1.12.0) (2026-06-29)
 
 ### Features
