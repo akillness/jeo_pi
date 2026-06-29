@@ -25,6 +25,19 @@ const BANNER_LINES = [
 const WELCOME_SHIMMER_FRAME_MS = 33;
 const WELCOME_SHIMMER_PHASE_OFFSET_MS = 350;
 
+// jeo_pi landing page copy. Kept as module constants so the welcome screen is a
+// testable, single-source description of what jeo_pi is and how to drive it.
+export const WELCOME_TAGLINE = "Engineering Discipline Extension";
+export const WELCOME_SUBTITLE =
+  "Spec-driven agentic harness for pi — clarify · plan · build · verify";
+
+export const WELCOME_WORKFLOW_STEPS: ReadonlyArray<{ command: string; blurb: string }> = [
+  { command: "/clarify", blurb: "Frame the problem before any code — never skip it." },
+  { command: "/goal", blurb: "Activate a durable Goal Contract with success criteria." },
+  { command: "/team", blurb: "Run the planner → executor → verifier loop on the plan." },
+  { command: "/welcome", blurb: "Show or hide this jeo_pi landing page anytime." },
+];
+
 const ANSI_RESET = "\x1b[0m";
 const ANSI_BOLD = "\x1b[1m";
 const BANNER_BASE_STOPS = ["#00d7d7", "#d7af5f", "#78ebeb"] as const;
@@ -132,7 +145,18 @@ class WelcomeHeaderComponent implements Component {
 
   private content(): string {
     const banner = this.renderBanner();
-    const tagline = this.theme.fg("dim", "Engineering Discipline Extension");
+    const tagline = this.theme.fg("dim", WELCOME_TAGLINE);
+    const subtitle = this.theme.fg("muted", WELCOME_SUBTITLE);
+
+    const workflowHeader = this.theme.fg("dim", "Core workflow");
+    const commandWidth = Math.max(...WELCOME_WORKFLOW_STEPS.map((step) => step.command.length));
+    const workflow = WELCOME_WORKFLOW_STEPS
+      .map((step) => {
+        const command = this.theme.fg("accent", step.command.padEnd(commandWidth));
+        return `  ${command}  ${this.theme.fg("muted", step.blurb)}`;
+      })
+      .join("\n");
+
     const tipLine = this.theme.fg("muted", "Tip: Always start with /clarify. Then activate a durable /goal.");
     const clarifyLine = this.theme.fg("dim", "Never skip /clarify — it prevents wasted effort.");
     const hints = [
@@ -144,7 +168,7 @@ class WelcomeHeaderComponent implements Component {
       rawKeyHint("!", "to run bash"),
     ].join("\n");
 
-    return `\n${banner}\n${tagline}\n\n${tipLine}\n${clarifyLine}\n\n${hints}`;
+    return `\n${banner}\n${tagline}\n${subtitle}\n\n${workflowHeader}\n${workflow}\n\n${tipLine}\n${clarifyLine}\n\n${hints}`;
   }
 
   private renderBanner(): string {

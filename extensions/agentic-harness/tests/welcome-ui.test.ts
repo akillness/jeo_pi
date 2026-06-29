@@ -53,6 +53,18 @@ describe("welcome header controller", () => {
     expect(rendered).toContain("/clarify");
   });
 
+  it("renders the jeo_pi landing page overview and core workflow", () => {
+    const component = createWelcomeHeader()({} as any, theme);
+    const rendered = component.render(120).join("\n");
+
+    expect(rendered).toContain("Spec-driven agentic harness for pi");
+    expect(rendered).toContain("Core workflow");
+    for (const command of ["/clarify", "/goal", "/team", "/welcome"]) {
+      expect(rendered).toContain(command);
+    }
+    expect(rendered).toContain("planner → executor → verifier loop");
+  });
+
   it("keeps the banner shimmer running while the header is shown", () => {
     vi.useFakeTimers();
     vi.setSystemTime(0);
