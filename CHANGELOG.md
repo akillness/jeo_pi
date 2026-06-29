@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0](https://github.com/akillness/jeo_pi/compare/v1.0.0...v1.1.0) (2026-06-29)
+
+### Features
+
+* **agentic-harness:** reflect jeo-code deep-dive as spec-deep-dive skill ([986a08d](https://github.com/akillness/jeo_pi/commit/986a08dfbae33012fc29ed122d969d7fcca1ef80))
+
+### CI
+
+* bump actions/checkout and setup-node to v5 (Node 24) ([80c5e2b](https://github.com/akillness/jeo_pi/commit/80c5e2b24249de6009f1cadb7883b94d59980816))
+
 ## 1.0.0 (2026-06-29)
 
 ### Features
