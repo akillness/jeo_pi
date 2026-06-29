@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.19.0](https://github.com/akillness/jeo-pi/compare/v1.18.1...v1.19.0) (2026-06-29)
+
+### Features
+
+* **tui:** collapse skill invocation output in chat log ([649b3d2](https://github.com/akillness/jeo-pi/commit/649b3d2734231a210bb127e6d8605f026bdecbbb))
+
+### Documentation
+
+* **assets:** give the robed jeo_pi mascot a satchel bag ([649e5e6](https://github.com/akillness/jeo-pi/commit/649e5e68200da7a7668ec236fd8c6c7301264747))
+* warn that registering both dev checkout and git package aborts startup with tool conflicts ([6981e8e](https://github.com/akillness/jeo-pi/commit/6981e8eb22ca6ceec1aa7d6fdf58733dea448e52))
+
+### Refactor
+
+* **brand:** rename jeo_pi to jeo-pi across docs, persona, and assets ([830e448](https://github.com/akillness/jeo-pi/commit/830e448c1004362dd188ae859adfeb935b1f4043))
+
+### Tests
+
+* **provider-auth:** LIVE-sweep every offered Antigravity model id ([b1f4b43](https://github.com/akillness/jeo-pi/commit/b1f4b43d50f0880c642b5ff5aade28e864dd9d26))
+
 ## [1.18.1](https://github.com/akillness/jeo-pi/compare/v1.18.0...v1.18.1) (2026-06-29)
 
 ### Bug Fixes
