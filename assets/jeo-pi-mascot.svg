@@ -1,39 +1,48 @@
 <svg width="600" height="600" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
   <title id="t">jeo_pi mascot</title>
-  <desc id="d">Super-deformed chibi robot mascot for jeo_pi — a big-headed terminal-faced bot waving hello, with a pi glyph on its chest, in the cyan / violet / orange brand palette.</desc>
+  <desc id="d">Super-deformed chibi robot mascot for jeo_pi — a big-headed terminal-faced bot with twin V antennae, glowing cyan eyes and a pi chest badge, styled after the jeo-code persona's electric cyan / indigo-violet / magenta glow palette.</desc>
   <defs>
-    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.6">
-      <stop offset="0" stop-color="#A78BFA" stop-opacity="0.35"/>
-      <stop offset="0.55" stop-color="#22D3EE" stop-opacity="0.12"/>
-      <stop offset="1" stop-color="#0B0A10" stop-opacity="0"/>
+    <radialGradient id="glow" cx="0.5" cy="0.46" r="0.62">
+      <stop offset="0" stop-color="#7C3AED" stop-opacity="0.40"/>
+      <stop offset="0.5" stop-color="#06B6D4" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#070612" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="shell" x1="150" y1="120" x2="450" y2="380" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#2A2A38"/>
-      <stop offset="1" stop-color="#16161F"/>
+    <linearGradient id="shell" x1="150" y1="120" x2="450" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1B1B3A"/>
+      <stop offset="1" stop-color="#0C0C20"/>
     </linearGradient>
-    <linearGradient id="rim" x1="150" y1="120" x2="450" y2="380" gradientUnits="userSpaceOnUse">
+    <linearGradient id="rim" x1="120" y1="120" x2="470" y2="430" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#22D3EE"/>
-      <stop offset="0.5" stop-color="#A78BFA"/>
-      <stop offset="1" stop-color="#F97316"/>
+      <stop offset="0.5" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#E879C9"/>
     </linearGradient>
-    <linearGradient id="body" x1="210" y1="380" x2="390" y2="500" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#232330"/>
-      <stop offset="1" stop-color="#13131B"/>
+    <linearGradient id="body" x1="220" y1="410" x2="380" y2="540" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1B1B3A"/>
+      <stop offset="1" stop-color="#0C0C20"/>
     </linearGradient>
-    <radialGradient id="eye" cx="0.4" cy="0.35" r="0.75">
-      <stop offset="0" stop-color="#D7FBFF"/>
-      <stop offset="0.45" stop-color="#22D3EE"/>
-      <stop offset="1" stop-color="#0E7490"/>
+    <radialGradient id="eye" cx="0.4" cy="0.33" r="0.78">
+      <stop offset="0" stop-color="#E6FCFF"/>
+      <stop offset="0.4" stop-color="#34C4FC"/>
+      <stop offset="0.85" stop-color="#0E7AD8"/>
+      <stop offset="1" stop-color="#0B3A8C"/>
     </radialGradient>
     <radialGradient id="cheek" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#F97316" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#F97316" stop-opacity="0"/>
+      <stop offset="0" stop-color="#E879C9" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#E879C9" stop-opacity="0"/>
     </radialGradient>
-    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="6"/>
+    <radialGradient id="orbC" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#CFFBFF"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </radialGradient>
+    <radialGradient id="orbM" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#FFD9F2"/>
+      <stop offset="1" stop-color="#E879C9"/>
+    </radialGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="7"/>
     </filter>
     <clipPath id="screenClip">
-      <rect x="182" y="156" width="236" height="180" rx="40"/>
+      <rect x="168" y="176" width="264" height="196" rx="46"/>
     </clipPath>
   </defs>
 
@@ -41,65 +50,69 @@
   <rect width="600" height="600" fill="url(#glow)"/>
 
   <!-- ground shadow -->
-  <ellipse cx="300" cy="544" rx="150" ry="22" fill="#000000" opacity="0.35" filter="url(#soft)"/>
+  <ellipse cx="300" cy="552" rx="138" ry="20" fill="#000000" opacity="0.35" filter="url(#soft)"/>
 
-  <!-- antenna -->
-  <line x1="300" y1="118" x2="300" y2="70" stroke="#5B5B6E" stroke-width="9" stroke-linecap="round"/>
-  <circle cx="300" cy="58" r="30" fill="#F97316" opacity="0.3" filter="url(#soft)"/>
-  <circle cx="300" cy="58" r="18" fill="#F97316"/>
-  <circle cx="294" cy="52" r="6" fill="#FFD9B0"/>
-
-  <!-- arms (drawn before body so shoulders tuck behind) -->
-  <g fill="none" stroke="#3A3A48" stroke-width="26" stroke-linecap="round">
-    <path d="M232 424 q-46 22 -64 60"/>
-    <path d="M372 410 q54 -28 72 -84"/>
+  <!-- twin V antennae (jeo-code persona signature) -->
+  <g fill="none" stroke="#5B5B8E" stroke-width="9" stroke-linecap="round">
+    <path d="M256 150 q-44 -52 -88 -96"/>
+    <path d="M344 150 q44 -52 88 -96"/>
   </g>
-  <circle cx="166" cy="490" r="20" fill="url(#rim)"/>
-  <circle cx="448" cy="320" r="22" fill="url(#rim)"/>
-  <circle cx="442" cy="313" r="6" fill="#FFFFFF" opacity="0.6"/>
+  <circle cx="168" cy="54" r="26" fill="#22D3EE" opacity="0.30" filter="url(#soft)"/>
+  <circle cx="432" cy="54" r="26" fill="#E879C9" opacity="0.30" filter="url(#soft)"/>
+  <circle cx="168" cy="54" r="15" fill="url(#orbC)"/>
+  <circle cx="432" cy="54" r="15" fill="url(#orbM)"/>
 
-  <!-- body -->
-  <rect x="214" y="372" width="172" height="138" rx="46" fill="url(#body)" stroke="url(#rim)" stroke-width="5"/>
-  <rect x="252" y="402" width="96" height="56" rx="14" fill="#0A0A0F" stroke="#1E1E2A" stroke-width="2"/>
-  <text x="300" y="444" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="40" font-weight="700" fill="#22D3EE">&#960;</text>
+  <!-- stubby arms (drawn before body so shoulders tuck behind) -->
+  <g fill="none" stroke="#2E2E58" stroke-width="26" stroke-linecap="round">
+    <path d="M244 450 q-40 22 -52 56"/>
+    <path d="M360 440 q48 -26 62 -74"/>
+  </g>
+  <circle cx="190" cy="510" r="19" fill="url(#rim)"/>
+  <circle cx="426" cy="362" r="21" fill="url(#rim)"/>
+  <circle cx="420" cy="356" r="6" fill="#FFFFFF" opacity="0.6"/>
 
-  <!-- legs -->
-  <rect x="248" y="498" width="42" height="42" rx="18" fill="#2A2A38"/>
-  <rect x="310" y="498" width="42" height="42" rx="18" fill="#2A2A38"/>
+  <!-- small SD body -->
+  <rect x="230" y="408" width="140" height="124" rx="42" fill="url(#body)" stroke="url(#rim)" stroke-width="5"/>
+  <rect x="262" y="434" width="76" height="48" rx="12" fill="#070614" stroke="#2A2A52" stroke-width="2"/>
+  <text x="300" y="470" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="34" font-weight="700" fill="#34C4FC">&#960;</text>
+
+  <!-- stubby legs -->
+  <rect x="256" y="520" width="38" height="38" rx="16" fill="#23234A"/>
+  <rect x="306" y="520" width="38" height="38" rx="16" fill="#23234A"/>
 
   <!-- big SD head -->
-  <rect x="150" y="120" width="300" height="252" rx="66" fill="url(#rim)"/>
-  <rect x="158" y="128" width="284" height="236" rx="60" fill="url(#shell)"/>
-  <ellipse cx="250" cy="168" rx="78" ry="22" fill="#FFFFFF" opacity="0.06"/>
+  <rect x="130" y="132" width="340" height="300" rx="84" fill="url(#rim)"/>
+  <rect x="139" y="141" width="322" height="282" rx="76" fill="url(#shell)"/>
+  <ellipse cx="240" cy="184" rx="86" ry="24" fill="#FFFFFF" opacity="0.07"/>
 
   <!-- ear nubs -->
-  <rect x="138" y="210" width="24" height="70" rx="12" fill="url(#rim)"/>
-  <rect x="438" y="210" width="24" height="70" rx="12" fill="url(#rim)"/>
+  <rect x="116" y="232" width="24" height="76" rx="12" fill="url(#rim)"/>
+  <rect x="460" y="232" width="24" height="76" rx="12" fill="url(#rim)"/>
 
   <!-- screen face -->
-  <rect x="182" y="156" width="236" height="180" rx="40" fill="#0A0A0F"/>
-  <g clip-path="url(#screenClip)" stroke="#22D3EE" stroke-width="1.5" opacity="0.05">
-    <line x1="182" y1="178" x2="418" y2="178"/>
-    <line x1="182" y1="206" x2="418" y2="206"/>
-    <line x1="182" y1="234" x2="418" y2="234"/>
-    <line x1="182" y1="262" x2="418" y2="262"/>
-    <line x1="182" y1="290" x2="418" y2="290"/>
-    <line x1="182" y1="318" x2="418" y2="318"/>
+  <rect x="168" y="176" width="264" height="196" rx="46" fill="#070614"/>
+  <g clip-path="url(#screenClip)" stroke="#34C4FC" stroke-width="1.5" opacity="0.06">
+    <line x1="168" y1="200" x2="432" y2="200"/>
+    <line x1="168" y1="228" x2="432" y2="228"/>
+    <line x1="168" y1="256" x2="432" y2="256"/>
+    <line x1="168" y1="284" x2="432" y2="284"/>
+    <line x1="168" y1="312" x2="432" y2="312"/>
+    <line x1="168" y1="340" x2="432" y2="340"/>
   </g>
-  <rect x="182" y="156" width="236" height="180" rx="40" fill="none" stroke="#1E1E2A" stroke-width="3"/>
+  <rect x="168" y="176" width="264" height="196" rx="46" fill="none" stroke="#2A2A52" stroke-width="3"/>
 
   <!-- cheeks -->
-  <circle cx="222" cy="266" r="26" fill="url(#cheek)"/>
-  <circle cx="378" cy="266" r="26" fill="url(#cheek)"/>
+  <circle cx="208" cy="300" r="26" fill="url(#cheek)"/>
+  <circle cx="392" cy="300" r="26" fill="url(#cheek)"/>
 
   <!-- big chibi eyes -->
-  <circle cx="252" cy="236" r="36" fill="url(#eye)"/>
-  <circle cx="348" cy="236" r="36" fill="url(#eye)"/>
-  <circle cx="240" cy="224" r="12" fill="#FFFFFF"/>
-  <circle cx="336" cy="224" r="12" fill="#FFFFFF"/>
-  <circle cx="262" cy="249" r="5" fill="#FFFFFF" opacity="0.8"/>
-  <circle cx="358" cy="249" r="5" fill="#FFFFFF" opacity="0.8"/>
+  <circle cx="240" cy="262" r="42" fill="url(#eye)"/>
+  <circle cx="360" cy="262" r="42" fill="url(#eye)"/>
+  <circle cx="226" cy="248" r="14" fill="#FFFFFF"/>
+  <circle cx="346" cy="248" r="14" fill="#FFFFFF"/>
+  <circle cx="252" cy="278" r="6" fill="#FFFFFF" opacity="0.8"/>
+  <circle cx="372" cy="278" r="6" fill="#FFFFFF" opacity="0.8"/>
 
   <!-- happy mouth -->
-  <path d="M270 298 q30 28 60 0" fill="none" stroke="#22D3EE" stroke-width="9" stroke-linecap="round"/>
+  <path d="M268 330 q32 30 64 0" fill="none" stroke="#34C4FC" stroke-width="9" stroke-linecap="round"/>
 </svg>
