@@ -58,3 +58,5 @@ evolution_log:
     note: "Doc sync: update docs/jeo-pi/spec-stack.md mapping, README banner, and skills/AGENTS.md Purpose+Testing to reflect the complete five-skill spec-* family (spec-stack/deep-dive/blueprint/execute/verify <- deep-interview/deep-dive/ralplan/team/ultragoal). No code change; vitest 815 pass."
   - rev: 15
     note: "Reflect jeo-code agents/AGENTS.md discipline ('non-mutating agents MUST NOT be given mutating tools'): add tests/agents-capability.test.ts enforcing the read-only/write capability column in agents/AGENTS.md against each agent's tools frontmatter (read-only roles declare a restricted tools list with no edit/write; write roles keep mutating access). Verified vitest extensions = 818 pass."
+  - rev: 16
+    note: "Reflect jeo-code engine.ts runtime integrity disciplines: add INTEGRITY_RULES (correctness-first, never-fabricate-tool-results, no-stubs, re-read-on-failure, own-mistakes, decline-malware, untrusted-data) auto-injected alongside KARPATHY_RULES into worker/plan-worker agents + discipline.test.ts assertions. Verified vitest extensions = 820 pass."
