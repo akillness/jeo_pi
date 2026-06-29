@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.14.0](https://github.com/akillness/jeo-pi/compare/v1.13.0...v1.14.0) (2026-06-29)
+
+### Features
+
+* **provider-auth:** expand antigravity model list to jeo-code catalog parity ([c897c6f](https://github.com/akillness/jeo-pi/commit/c897c6f35f234e3d5fbf8d72b8bbab23713b7720))
+
 ## [1.13.0](https://github.com/akillness/jeo-pi/compare/v1.12.0...v1.13.0) (2026-06-29)
 
 ### Features
