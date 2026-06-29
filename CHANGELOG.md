@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0](https://github.com/akillness/jeo-pi/compare/v1.6.0...v1.7.0) (2026-06-29)
+
+### Features
+
+* **agentic-harness:** inject runtime integrity disciplines into worker agents ([a7952e7](https://github.com/akillness/jeo-pi/commit/a7952e7e6249f70636b9b541e75eebc949fdc5cd))
+
 ## [1.6.0](https://github.com/akillness/jeo_pi/compare/v1.5.0...v1.6.0) (2026-06-29)
 
 ### Features
