@@ -20,6 +20,7 @@ import { microcompactMessages, getCompactionPrompt, formatCompactSummary, buildG
 import { convertToLlm, serializeConversation } from "@mariozechner/pi-coding-agent";
 import { complete } from "@mariozechner/pi-ai";
 import { isDisciplineAgent, augmentAgentWithKarpathy } from "./discipline.js";
+import { forgePersona } from "./persona.js";
 import {
   extractPlanPathsFromArgs,
   getToolExecutionArgs,
@@ -1285,7 +1286,7 @@ Do not start multi-step implementation without a clear understanding of what the
     // provider prompt-cache keys. Phase-specific instructions are delivered by
     // the command follow-up prompts that start those workflows instead.
     return {
-      systemPrompt: event.systemPrompt + PROGRESS_TRACKING_RULES,
+      systemPrompt: forgePersona(event.systemPrompt) + PROGRESS_TRACKING_RULES,
     };
   });
 
