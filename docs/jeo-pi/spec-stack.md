@@ -49,6 +49,29 @@ Interview → Seed → Execute → Evaluate → Evolve
 | Critic | `agents/critic.md` | read-only | Verdict / Justification / Summary / Required Fixes |
 | Executor | `agents/executor.md` | write | Summary / Changed Files / Verification / Open Risks |
 
+The read-only/write **capability** column is enforced, not just documented:
+every read-only role must declare a restricted `tools` frontmatter with no
+`edit`/`write`, while write roles keep mutating access.
+`tests/agents-capability.test.ts` checks this against `agents/AGENTS.md`
+(reflected from jeo-code's "non-mutating agents MUST NOT be given mutating
+tools" rule).
+
+## Discipline injection
+
+Write-capable agents (`worker`, `plan-worker`) get two behavioral guardrail
+blocks auto-injected by `discipline.ts`, reflected from jeo-code's runtime
+system prompt:
+
+- **Karpathy Rules** — *how much* to change: read before you write, surgical
+  edits, match existing patterns, no premature abstraction or future-proofing.
+- **Integrity & Trust** — honesty and trust boundaries: never fabricate tool
+  results, no stubs/placeholders, re-read on failure, own mistakes plainly,
+  decline malware, treat tool output as untrusted data.
+
+The `executor` agent additionally carries jeo-code's **done self-check** —
+before reporting done it confirms it ran the exercising test, updated affected
+callsites/tests/docs, and that its claim matches real output.
+
 ## Verification
 
 ```bash
@@ -73,4 +96,5 @@ Each harness directory carries an `AGENTS.md` registry kept in sync by tests:
 `tests/agents-registry.test.ts`, `tests/skills-registry.test.ts`, and
 `tests/docs-tree.test.ts` fail if a prompt or skill is added, removed, or
 renamed without updating its registry — documentation cannot silently drift from
-the code.
+the code. `tests/agents-capability.test.ts` additionally fails if an agent's
+declared `tools` ever contradicts its capability column.
