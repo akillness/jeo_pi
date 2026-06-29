@@ -7,6 +7,7 @@ vi.mock("@mariozechner/pi-coding-agent", () => ({
 }));
 
 import {
+  BANNER_LINES,
   createWelcomeHeader,
   dismissWelcomeHeader,
   isWelcomeVisible,
@@ -50,7 +51,36 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe("jeopi banner wordmark", () => {
+  it("is a 6-row ANSI Shadow wordmark with uniform display width", () => {
+    expect(BANNER_LINES).toHaveLength(6);
+    const widths = BANNER_LINES.map((line) => Array.from(line).length);
+    // Every row must share one display width or the block-letters shear apart.
+    expect(new Set(widths).size).toBe(1);
+    expect(widths[0]).toBeGreaterThan(0);
+  });
+
+  it("kerns the five letters into one cohesive JEOPI with no inter-letter gap", () => {
+    // The retired wordmark was "JEO PI" — a 4-space inter-word gap split it in
+    // two. Block letters legitimately carry interior gaps up to 5 cells (e.g.
+    // the P stem row), but a run of 6+ spaces only happens when whole letters
+    // are pushed apart, so guard against that to keep "JEOPI" reading as one.
+    for (const line of BANNER_LINES) {
+      const interior = line.replace(/^ +| +$/g, "");
+      expect(interior).not.toMatch(/ {6,}/);
+    }
+  });
+
+  it("renders the wordmark into the static (non-shimmer) header", () => {
+    const rendered = createWelcomeHeader()({} as any, theme).render(120).join("\n");
+    for (const line of BANNER_LINES) {
+      expect(rendered).toContain(line.trimEnd());
+    }
+  });
+});
+
 describe("welcome header controller", () => {
+
   it("creates a non-blocking header component", () => {
     const component = createWelcomeHeader()({} as any, theme);
     const rendered = component.render(120).join("\n");
