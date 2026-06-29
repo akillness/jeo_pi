@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.12.0](https://github.com/akillness/jeo-pi/compare/v1.11.0...v1.12.0) (2026-06-29)
+
+### Features
+
+* **provider-auth:** port jeo-code provider login (Claude, Antigravity, API providers) ([186d328](https://github.com/akillness/jeo-pi/commit/186d328ec17ac2b673db593136809f8c8e2ee86c))
+
+### Tests
+
+* **welcome:** verify /welcome toggle round-trip and every alias ([cbe5445](https://github.com/akillness/jeo-pi/commit/cbe54455291c1a06a3ec0daac46fef1b0f964071))
+
 ## [1.11.0](https://github.com/akillness/jeo-pi/compare/v1.10.0...v1.11.0) (2026-06-29)
 
 ### Features

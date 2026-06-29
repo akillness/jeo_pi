@@ -1,6 +1,6 @@
 {
   "name": "jeo-pi-engineering-discipline-extension",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "description": "jeo_pi — engineering-discipline extension suite for the pi coding agent (forked from roach-pi), evolving toward jeo-code workflows and system prompts.",
   "keywords": [
     "pi-package",
