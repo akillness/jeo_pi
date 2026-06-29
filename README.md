@@ -182,6 +182,17 @@ pi install . -l         # …or project-local (.pi/settings.json)
 ```
 </details>
 
+> [!WARNING]
+> **Do not register both the git package and a local checkout at once.** If you
+> ran `pi install .` (or `pi install . -l`) for development *and* `pi install
+> git:github.com/akillness/jeo-pi`, pi loads the same extensions twice and aborts
+> at startup with a wall of `Tool "…" conflicts with …` / `Flag "…" conflicts
+> with …` errors (then `Hint: Start without extensions using "pi -ne"`). pi
+> dedupes packages by canonical path, so it cannot tell the two copies are the
+> same repo. Keep exactly one source registered — run `pi list`, then drop the
+> extra with `pi remove .` (to use the git package) or `pi remove
+> git:github.com/akillness/jeo-pi` (to keep developing from your checkout).
+
 Confirm the package registered:
 
 ```bash

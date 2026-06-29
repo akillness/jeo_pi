@@ -49,3 +49,20 @@ PI_FPS=1 pi
 
 ### 5) Keep debug off by default
 These flags are opt-in and should remain off in normal usage.
+## Startup Gotcha: duplicate package registration
+
+If `pi` aborts at startup with many `Tool "…" conflicts with …` / `Flag "…"
+conflicts with …` lines (followed by `Hint: Start without extensions using "pi
+-ne"`), the same jeo_pi extensions are registered twice — almost always a local
+dev checkout (`pi install .`) **and** the git package
+(`pi install git:github.com/akillness/jeo-pi`) at once. pi dedupes packages by
+canonical path (`resource-loader.mergePaths`), so it cannot tell two physical
+copies are the same repo and every shared tool/flag collides → fatal exit.
+
+Fix: register exactly one source.
+
+```bash
+pi list                                     # see what is registered
+pi remove .                                 # keep the git package, or…
+pi remove git:github.com/akillness/jeo-pi   # keep developing from the checkout
+```
