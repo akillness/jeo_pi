@@ -1,6 +1,6 @@
 <svg width="600" height="600" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
   <title id="t">jeo_pi mascot</title>
-  <desc id="d">Super-deformed chibi robot mascot for jeo_pi — a big-headed terminal-faced bot with twin V antennae, glowing cyan eyes and a pi chest badge, styled after the jeo-code persona's electric cyan / indigo-violet / magenta glow palette.</desc>
+  <desc id="d">Super-deformed chibi mascot for jeo_pi — the jeo-code persona (twin V antennae, glowing cyan eyes, electric cyan / indigo-violet / magenta palette) reimagined with roach-pi's katydid personality: it wears a little green side bag and munches a cookie snack.</desc>
   <defs>
     <radialGradient id="glow" cx="0.5" cy="0.46" r="0.62">
       <stop offset="0" stop-color="#7C3AED" stop-opacity="0.40"/>
@@ -38,6 +38,14 @@
       <stop offset="0" stop-color="#FFD9F2"/>
       <stop offset="1" stop-color="#E879C9"/>
     </radialGradient>
+    <linearGradient id="bag" x1="168" y1="452" x2="242" y2="522" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4ADE80"/>
+      <stop offset="1" stop-color="#15A34A"/>
+    </linearGradient>
+    <radialGradient id="cookie" cx="0.4" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#F7D085"/>
+      <stop offset="1" stop-color="#C8862F"/>
+    </radialGradient>
     <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
       <feGaussianBlur stdDeviation="7"/>
     </filter>
@@ -62,23 +70,24 @@
   <circle cx="168" cy="54" r="15" fill="url(#orbC)"/>
   <circle cx="432" cy="54" r="15" fill="url(#orbM)"/>
 
-  <!-- stubby arms (drawn before body so shoulders tuck behind) -->
-  <g fill="none" stroke="#2E2E58" stroke-width="26" stroke-linecap="round">
-    <path d="M244 450 q-40 22 -52 56"/>
-    <path d="M360 440 q48 -26 62 -74"/>
-  </g>
-  <circle cx="190" cy="510" r="19" fill="url(#rim)"/>
-  <circle cx="426" cy="362" r="21" fill="url(#rim)"/>
-  <circle cx="420" cy="356" r="6" fill="#FFFFFF" opacity="0.6"/>
+  <!-- left arm resting (behind body) -->
+  <path d="M248 452 q-44 28 -52 62" fill="none" stroke="#2E2E58" stroke-width="26" stroke-linecap="round"/>
+  <circle cx="196" cy="514" r="19" fill="url(#rim)"/>
 
   <!-- small SD body -->
   <rect x="230" y="408" width="140" height="124" rx="42" fill="url(#body)" stroke="url(#rim)" stroke-width="5"/>
   <rect x="262" y="434" width="76" height="48" rx="12" fill="#070614" stroke="#2A2A52" stroke-width="2"/>
   <text x="300" y="470" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="34" font-weight="700" fill="#34C4FC">&#960;</text>
 
+  <!-- roach-pi katydid nod: little green side bag -->
+  <path d="M236 460 q4 -34 22 -48" fill="none" stroke="#15A34A" stroke-width="11" stroke-linecap="round"/>
+  <rect x="166" y="460" width="78" height="66" rx="16" fill="url(#bag)" stroke="#0E7A38" stroke-width="3"/>
+  <rect x="162" y="452" width="86" height="28" rx="12" fill="#22C55E" stroke="#0E7A38" stroke-width="3"/>
+  <circle cx="205" cy="478" r="6" fill="#F7D085" stroke="#A86A24" stroke-width="1.5"/>
+
   <!-- stubby legs -->
-  <rect x="256" y="520" width="38" height="38" rx="16" fill="#23234A"/>
-  <rect x="306" y="520" width="38" height="38" rx="16" fill="#23234A"/>
+  <rect x="262" y="520" width="38" height="38" rx="16" fill="#23234A"/>
+  <rect x="312" y="520" width="38" height="38" rx="16" fill="#23234A"/>
 
   <!-- big SD head -->
   <rect x="130" y="132" width="340" height="300" rx="84" fill="url(#rim)"/>
@@ -105,7 +114,7 @@
   <circle cx="208" cy="300" r="26" fill="url(#cheek)"/>
   <circle cx="392" cy="300" r="26" fill="url(#cheek)"/>
 
-  <!-- big chibi eyes -->
+  <!-- big chibi eyes (happy munching squint on the snack side) -->
   <circle cx="240" cy="262" r="42" fill="url(#eye)"/>
   <circle cx="360" cy="262" r="42" fill="url(#eye)"/>
   <circle cx="226" cy="248" r="14" fill="#FFFFFF"/>
@@ -113,6 +122,23 @@
   <circle cx="252" cy="278" r="6" fill="#FFFFFF" opacity="0.8"/>
   <circle cx="372" cy="278" r="6" fill="#FFFFFF" opacity="0.8"/>
 
-  <!-- happy mouth -->
-  <path d="M268 330 q32 30 64 0" fill="none" stroke="#34C4FC" stroke-width="9" stroke-linecap="round"/>
+  <!-- open munching mouth with little tongue -->
+  <path d="M274 326 Q300 314 326 326 Q314 360 300 360 Q286 360 274 326 Z" fill="#0A0820" stroke="#34C4FC" stroke-width="4"/>
+  <ellipse cx="300" cy="350" rx="10" ry="6" fill="#E879C9"/>
+
+  <!-- right arm raising the snack to the mouth (in front) -->
+  <path d="M352 428 q36 -20 24 -60" fill="none" stroke="#2E2E58" stroke-width="26" stroke-linecap="round"/>
+  <circle cx="374" cy="368" r="17" fill="url(#rim)"/>
+
+  <!-- cookie snack being eaten -->
+  <circle cx="352" cy="340" r="23" fill="url(#cookie)" stroke="#A86A24" stroke-width="2"/>
+  <circle cx="346" cy="332" r="3" fill="#4A2C12"/>
+  <circle cx="360" cy="344" r="3" fill="#4A2C12"/>
+  <circle cx="349" cy="350" r="2.4" fill="#4A2C12"/>
+  <circle cx="358" cy="330" r="2.4" fill="#4A2C12"/>
+  <!-- bite taken out of the mouth-facing side -->
+  <circle cx="330" cy="334" r="11" fill="#070614"/>
+  <!-- crumbs heading to the mouth -->
+  <circle cx="320" cy="340" r="2.4" fill="#D89A3E"/>
+  <circle cx="314" cy="347" r="1.8" fill="#D89A3E"/>
 </svg>
