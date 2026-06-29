@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.15.0](https://github.com/akillness/jeo-pi/compare/v1.14.0...v1.15.0) (2026-06-29)
+
+### Features
+
+* **provider-auth:** show pi's auth-browser page after Antigravity OAuth (Claude parity) ([1001963](https://github.com/akillness/jeo-pi/commit/100196338c76bea1dd13f32f6ad38f12515641a6))
+
+### Bug Fixes
+
+* **provider-auth:** make Antigravity stream reasoning after OAuth (CCA thinkingConfig parity) ([dc38dd7](https://github.com/akillness/jeo-pi/commit/dc38dd73232c96667c2eef5180b4da883285d021))
+
 ## [1.14.0](https://github.com/akillness/jeo-pi/compare/v1.13.0...v1.14.0) (2026-06-29)
 
 ### Features
