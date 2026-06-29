@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.20.0](https://github.com/akillness/jeo-pi/compare/v1.19.0...v1.20.0) (2026-06-29)
+
+### Features
+
+* **provider-auth:** declare up-to-date Claude catalogue on anthropic provider ([f23992a](https://github.com/akillness/jeo-pi/commit/f23992aeae3317a05041ba2bf4b556407191b4bf))
+
+### Documentation
+
+* **provider-auth:** document Anthropic OAuth provider + Claude catalogue ([0edc71f](https://github.com/akillness/jeo-pi/commit/0edc71f1dc09f0be249b9553939b5dc62dcc69c6))
+
 ## [1.19.0](https://github.com/akillness/jeo-pi/compare/v1.18.1...v1.19.0) (2026-06-29)
 
 ### Features
