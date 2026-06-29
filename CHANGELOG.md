@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.15.1](https://github.com/akillness/jeo-pi/compare/v1.15.0...v1.15.1) (2026-06-29)
+
+### Bug Fixes
+
+* **provider-auth:** drop duplicate server.close()/resolve in Antigravity OAuth callback ([9da68a5](https://github.com/akillness/jeo-pi/commit/9da68a537132c3da180714cf3d2eee9bdf561d7f))
+
 ## [1.15.0](https://github.com/akillness/jeo-pi/compare/v1.14.0...v1.15.0) (2026-06-29)
 
 ### Features
