@@ -55,16 +55,7 @@ export default {
         npmPublish: false,
       },
     ],
-    [
-      "@semantic-release/github",
-      {
-        successComment:
-          ":tada: Shipped in [`${nextRelease.gitTag}`](${releases.filter((release) => /github\\.com/.test(release.url))[0].url}).",
-        failComment: false,
-        releasedLabels: ["released"],
-        addReleases: "bottom",
-      },
-    ],
+    "@semantic-release/github",
     [
       "@semantic-release/git",
       {

@@ -84,10 +84,10 @@ The contract is frozen as an **immutable seed**, executed against, evaluated hon
 | Stage | What happens | Driven by |
 |---|---|---|
 | **Interview** | Route ambiguous work through `/clarify`; freeze nothing until ambiguity ≤ 0.2 | `spec-stack` · `/clarify` |
-| **Seed** | Freeze the Goal Contract under `.ouroboros/seeds/*.yaml` (immutable; revisions create new entries) | `.ouroboros/seeds/` |
+| **Seed** | `spec-stack` freezes the Goal Contract under `.ouroboros/seeds/*.yaml` in your workspace (immutable; revisions create new entries) | `spec-stack` |
 | **Execute** | Drive with `/goal`; delegate bounded slices to role subagents | `spec-execute` · `/goal` · `executor` |
 | **Evaluate** | Never claim done until the verifier returns `PASS`; attach evidence; never weaken criteria | `spec-verify` · `reviewer-verifier` |
-| **Evolve** | Compare outcome to seed, record drift, re-seed | `.ouroboros/` |
+| **Evolve** | Compare outcome to seed, record drift, re-seed | `spec-stack` · `spec-verify` |
 
 ---
 
@@ -495,7 +495,6 @@ extensions/
   workspace-memory/    # save/recall workspace memory
   pi-mcp-adapter/      # lazy MCP proxy
   pi-code-previews/    # syntax-highlighted tool-call previews (shiki)
-.ouroboros/seeds/      # immutable frozen Goal Contracts
 docs/jeo-pi/           # spec-stack mapping and design notes
 docs/engineering-discipline/
   context/ plans/ reviews/   # Context Briefs, plans, review outputs
@@ -503,6 +502,8 @@ assets/                # README visuals (SVG graphs + mascot)
 ```
 
 Bundled package dependencies also include `pi-lsp-client`, `pi-mcp-adapter`, `@code-yeongyu/pi-nested-agents-md`, and `shiki` (powering `pi-code-previews`).
+
+At runtime, `spec-stack` writes frozen seeds to `.ouroboros/seeds/` in your working directory and the harness persists goal-run state under `.pi/agent/goal-state/`; neither is tracked in this repository.
 
 ---
 

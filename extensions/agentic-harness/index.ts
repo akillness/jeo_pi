@@ -2143,7 +2143,7 @@ Do not start multi-step implementation without a clear understanding of what the
         `  ${settingsPath}`,
         "",
         "This hides the default Skills/Extensions/Themes listing at startup.",
-        "The ROACH PI banner takes over instead.",
+        "The JEO PI banner takes over instead.",
         "",
         "Proceed?",
       ].join("\n"),
@@ -2160,11 +2160,11 @@ Do not start multi-step implementation without a clear understanding of what the
       const { execSync } = await import("child_process");
       execSync("gh auth status", { stdio: "pipe", timeout: 3000 });
       const star = await ctx.ui.confirm(
-        "Star roach-pi on GitHub?",
-        "Thanks for using ROACH PI! Would you like to star the repository? ⭐",
+        "Star jeo-pi on GitHub?",
+        "Thanks for using JEO PI! Would you like to star the repository? ⭐",
       );
       if (star) {
-        execSync("gh api user/starred/tmdgusya/roach-pi -X PUT", { stdio: "pipe" });
+        execSync("gh api user/starred/akillness/jeo-pi -X PUT", { stdio: "pipe" });
         ctx.ui.notify("Thanks for the star! ⭐", "info");
       }
     } catch {
