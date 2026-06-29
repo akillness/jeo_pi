@@ -2,16 +2,18 @@
 
 OAuth subscription login and custom model providers for the pi coding agent.
 
-This extension wires two things into pi's native `/login`:
+This extension wires three things into pi's native `/login`:
 
-1. **Antigravity** — a subscription provider that talks to Google's Cloud Code
+1. **Anthropic (Claude)** — a subscription provider that overrides pi's built-in
+   Claude OAuth + streaming with `jeo-code`'s proven flow, and replaces pi's
+   stale built-in Claude list with an up-to-date model catalogue.
+2. **Antigravity** — a subscription provider that talks to Google's Cloud Code
    Assist (CCA) backend, with the OAuth flow, scopes, and model catalogue kept
    in parity with `jeo-code`.
-2. **Custom providers** — any OpenAI-compatible endpoints declared in
+3. **Custom providers** — any OpenAI-compatible endpoints declared in
    `~/.pi/agent/models.json` are loaded and registered automatically.
 
-Anthropic (Claude) subscription login is provided natively by pi-ai and needs no
-registration here; it shares the same branded sign-in page (see below).
+All providers share the same branded sign-in page (see below).
 
 ## Sign in
 
@@ -35,6 +37,44 @@ the terminal and closes.
 
 > pi-ai's `oauth-page.js` is not in the package `exports`, so the page is
 > replicated locally rather than imported via a subpath.
+
+## Anthropic OAuth
+
+`anthropic/register.ts` registers the provider name `anthropic`, overriding pi's
+built-in Claude provider in the global `/login` registry:
+
+| Piece | What it does |
+|-------|--------------|
+| `oauth` block | `jeo-code`'s `claude.ai/oauth/authorize` PKCE flow (`anthropic/oauth.ts`), replacing pi's built-in (`platform.claude.com`) login |
+| `streamSimple` (`anthropic-messages` api) | Claude Code request shape that makes an OAuth subscription respond — identity headers, billing/cloaking metadata, system prelude, adaptive/budget thinking, native tool blocks (`anthropic/messages.ts`) |
+| `models` catalogue | Replaces pi's stale built-in Claude list (full replacement) and pins every Claude id to the transport above |
+
+OAuth refresh tokens are **single-use (rotating)**: each refresh returns a new
+access+refresh pair and invalidates the prior one, so credentials are persisted
+back to `~/.pi/agent/auth.json` immediately after every refresh. Either the
+`sk-ant-…` API-key path (`ANTHROPIC_API_KEY`) or the Pro/Max OAuth subscription
+works.
+
+## Anthropic model catalogue
+
+`ANTHROPIC_CATALOG` (`anthropic/register.ts`) mirrors `jeo-code`'s verified
+direct-API entries (`src/ai/model-catalog.ts`). Every id is the exact wire id the
+live `/v1/messages` endpoint serves; all carry a 200K context window, accept text
++ images, and bill at 0 cost (the Pro/Max subscription is not per-token billed).
+
+| Model id | Label | Reasoning | Max output |
+|----------|-------|-----------|------------|
+| `claude-opus-4-8` | Claude Opus 4.8 | yes | 64K |
+| `claude-opus-4-7` | Claude Opus 4.7 | yes | 64K |
+| `claude-opus-4-6` | Claude Opus 4.6 | yes | 64K |
+| `claude-opus-4-5-20251101` | Claude Opus 4.5 | yes | 64K |
+| `claude-opus-4-1-20250805` | Claude Opus 4.1 | yes | 32K |
+| `claude-sonnet-4-5-20250929` | Claude Sonnet 4.5 | yes | 64K |
+| `claude-haiku-4-5-20251001` | Claude Haiku 4.5 | yes | 64K |
+| `claude-3-5-sonnet-20241022` | Claude 3.5 Sonnet | no | 8,192 |
+
+Thinking transport is selected per id by `messages.ts`: opus 4.6+ stream via
+adaptive thinking, 4.5 via budget-effort, older ids via budget.
 
 ## Antigravity OAuth
 
@@ -74,7 +114,10 @@ All models expose reasoning (at least standard thinking).
 
 | File | Purpose |
 |------|---------|
-| `index.ts` | Registers Antigravity + loads custom providers from `models.json` |
+| `index.ts` | Registers Anthropic + Antigravity + loads custom providers from `models.json` |
+| `anthropic/register.ts` | Claude model catalogue + provider registration (OAuth, `streamSimple`) |
+| `anthropic/oauth.ts` | Claude OAuth PKCE flow + rotating-token refresh |
+| `anthropic/messages.ts` | Claude Code `/v1/messages` streaming transport (thinking, tools) |
 | `antigravity/register.ts` | Model catalogue + provider registration (`modifyModels`) |
 | `antigravity/oauth.ts` | OAuth flow + branded callback page serving |
 | `auth-page.ts` | Branded pi 인증 브라우저 page renderer |
@@ -86,9 +129,10 @@ bash
 npx vitest run extensions/provider-auth --exclude '**/*.manual.test.ts'
 
 
-Live wire tests against the real CCA backend (require valid credentials in
+Live wire tests against the real backends (require valid credentials in
 `~/.pi/agent/auth.json`):
 
 bash
 PI_LIVE_ANTIGRAVITY=1 npx vitest run extensions/provider-auth/tests/live-antigravity.manual.test.ts
+PI_LIVE_ANTHROPIC=1   npx vitest run extensions/provider-auth/tests/live-anthropic.manual.test.ts
 
