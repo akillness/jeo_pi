@@ -1,47 +1,47 @@
 <p align="center">
-  <img src="assets/hero.svg" alt="ROACH PI — engineering discipline for pi" width="100%">
+  <img src="assets/hero.svg" alt="jeo_pi — engineering discipline + spec-first agentic harness for pi" width="100%">
 </p>
 
 <p align="center">
-  <img src="assets/roach-pi-mascot.png" alt="ROACH PI mascot" width="280">
+  <img src="assets/jeo-pi-mascot.png" alt="jeo_pi mascot" width="260">
 </p>
 
 <p align="center">
-  <strong>Engineering discipline, agentic orchestration, and power-user tools for the pi coding agent.</strong>
+  <strong>Engineering discipline, spec-first orchestration, and power-user tools for the <a href="https://github.com/badlogic/pi-mono">pi</a> coding agent.</strong>
 </p>
 
-<p align="center"><strong>Eight</strong> bundled extensions · <strong>MIT</strong> license · <strong>pi 0.72.x</strong> · <strong>40+</strong> language servers · <strong>TypeScript</strong></p>
-
 <p align="center">
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-keep-3FB950?style=flat&colorA=17141C" alt="Changelog"></a>
+  <a href="https://github.com/akillness/jeo_pi/releases"><img src="https://img.shields.io/github/v/release/akillness/jeo_pi?style=flat&colorA=17141C&color=3FB950&label=release" alt="Latest release"></a>
+  <a href="https://github.com/akillness/jeo_pi/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/akillness/jeo_pi/ci.yml?branch=main&style=flat&colorA=17141C&label=CI" alt="CI"></a>
+  <a href="https://github.com/akillness/jeo_pi/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/akillness/jeo_pi/release.yml?branch=main&style=flat&colorA=17141C&label=release%20pipeline" alt="Release pipeline"></a>
+  <a href="https://akillness.github.io/jeo_pi/"><img src="https://img.shields.io/badge/docs-pages-56C5E8?style=flat&colorA=17141C" alt="Docs site"></a>
   <a href="package.json"><img src="https://img.shields.io/badge/license-MIT-56C5E8?style=flat&colorA=17141C" alt="MIT license"></a>
   <a href="https://github.com/badlogic/pi-mono"><img src="https://img.shields.io/badge/pi-0.72.x-8B5CF6?style=flat&colorA=17141C" alt="pi 0.72.x"></a>
   <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-D6409F?style=flat&colorA=17141C&logo=typescript&logoColor=white" alt="TypeScript"></a>
-  <a href="package.json"><img src="https://img.shields.io/badge/search-FFF-E64F9E?style=flat&colorA=17141C" alt="FFF search"></a>
 </p>
 
 <p align="center">
-  Built on <a href="https://github.com/badlogic/pi-mono">pi</a>. Focused on transparent prompts, verifiable execution, subagents, code review, memory, LSP, MCP, and fast search.
+  <strong>8</strong> bundled extensions · <strong>spec-*</strong> skill family · planner / architect / critic / executor agents · verifier-gated completion
 </p>
 
 ---
 
-> **jeo_pi** is a fork of [tmdgusya/roach-pi](https://github.com/tmdgusya/roach-pi) (MIT), evolving toward
-> [jeo-code](https://github.com/akillness/jeo-code)'s spec-first workflow and agent system prompts.
-> The upstream README below documents the bundled extension suite; jeo_pi adds the **`spec-*` skill family**
-> (`spec-stack`, `spec-deep-dive`, `spec-blueprint`, `spec-execute`, `spec-verify` under
-> `extensions/agentic-harness/skills/`) reflecting jeo-code's deep-interview → deep-dive → ralplan → team →
-> ultragoal workflow, plus the planner/architect/critic/executor role agents, driven by an immutable Ouroboros
-> seed in `.ouroboros/seeds/`. See [`docs/jeo-pi/spec-stack.md`](docs/jeo-pi/spec-stack.md).
+> **jeo_pi** is an engineering-discipline extension suite for the **pi** coding agent. It began as a fork of
+> [tmdgusya/roach-pi](https://github.com/tmdgusya/roach-pi) (MIT) and now reflects
+> [jeo-code](https://github.com/akillness/jeo-code)'s spec-first **Ouroboros** workflow —
+> _deep-interview → deep-dive → ralplan → team → ultragoal_ — directly into pi's native extension
+> machinery instead of bolting on a parallel framework. See [`docs/jeo-pi/spec-stack.md`](docs/jeo-pi/spec-stack.md).
 
 ## Table of Contents
 
-- [What is ROACH PI?](#what-is-roach-pi)
-- [Architecture](#eight-extensions-one-loop)
+- [What is jeo_pi?](#what-is-jeo_pi)
+- [The spec-first loop](#the-spec-first-loop)
+- [Eight extensions, one loop](#eight-extensions-one-loop)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-- [Clarify and Goal](#clarify-then-goal)
-- [Subagent Orchestration](#delegate-in-parallel)
+- [spec-\* skill family](#the-spec--skill-family)
+- [Clarify, then goal](#clarify-then-goal)
+- [Delegate in parallel](#delegate-in-parallel)
 - [Review](#catch-it-before-it-ships)
 - [FFF Search](#search-git-aware)
 - [LSP Code Intelligence](#lsp-code-intelligence)
@@ -53,38 +53,69 @@
 - [Commands Reference](#commands-reference)
 - [Tools Reference](#tools-reference)
 - [Configuration](#configuration)
+- [Repository Layout](#repository-layout)
 - [Development](#development)
 - [Contributing](#contributing)
 - [License](#license)
 
 ---
 
-## What is _ROACH PI_?
+## What is _jeo_pi_?
 
-ROACH PI is an extension suite for the pi coding agent. It turns a normal coding session into a disciplined engineering loop:
+jeo_pi turns an ordinary pi session into a disciplined engineering loop: ambiguity is forced into the open
+before code is written, plans are reviewed by adversarial role agents, execution is delegated to bounded
+subagents, and **completion is gated by a verifier** — a target cannot be marked done until the verifier
+returns `PASS`.
+
+It is intentionally inspectable: every command, tool, hook, agent, and skill is plain TypeScript and Markdown
+in this repository. Nothing is hidden behind an opaque service.
+
+---
+
+## The spec-first loop
+
+jeo_pi reflects jeo-code's **Ouroboros** workflow into roach-pi's agentic-harness rather than reimplementing it.
+The contract is frozen as an **immutable seed**, executed against, evaluated honestly, and re-seeded when reality drifts.
 
 <p align="center">
-  <img src="assets/workflow-goal-preview.svg" alt="ROACH PI workflow: clarify → goal → verifier-guarded continuation" width="88%">
+  <img src="assets/spec-loop.svg" alt="jeo_pi spec-first loop: Interview, Seed, Execute, Evaluate, Evolve" width="90%">
 </p>
 
-It is intentionally inspectable: commands, tools, hooks, agents, and skills are plain TypeScript and Markdown in this repository.
+| Stage | What happens | Driven by |
+|---|---|---|
+| **Interview** | Route ambiguous work through `/clarify`; freeze nothing until ambiguity ≤ 0.2 | `spec-stack` · `/clarify` |
+| **Seed** | Freeze the Goal Contract under `.ouroboros/seeds/*.yaml` (immutable; revisions create new entries) | `.ouroboros/seeds/` |
+| **Execute** | Drive with `/goal`; delegate bounded slices to role subagents | `spec-execute` · `/goal` · `executor` |
+| **Evaluate** | Never claim done until the verifier returns `PASS`; attach evidence; never weaken criteria | `spec-verify` · `reviewer-verifier` |
+| **Evolve** | Compare outcome to seed, record drift, re-seed | `.ouroboros/` |
 
 ---
 
 ## Eight extensions, _one loop_.
 
-Eight bundled extensions, one disciplined engineering loop:
+Eight bundled extensions cooperate around the agentic-harness core:
 
 <p align="center">
-  <img src="assets/architecture-overview.svg" alt="ROACH PI extension architecture overview" width="88%">
+  <img src="assets/architecture-overview.svg" alt="jeo_pi extension architecture overview" width="90%">
 </p>
+
+| Extension | Responsibility |
+|---|---|
+| **agentic-harness** | Workflow runtime (`/clarify`, `/goal`), `subagent`, `/review`, `team`, `webfetch`, the `spec-*` skills, and role agents |
+| **fff-search** | Git-aware fuzzy `find` / `grep` / `multi_grep` and `@` autocomplete |
+| **pi-lsp-client** | IDE-grade diagnostics, definitions, references, symbols, rename — 40+ language servers |
+| **pi-mcp-adapter** | Lazy MCP proxy — discover and call MCP tools without burning the context window |
+| **workspace-memory** | Save and recall structured findings, scoped per workspace |
+| **session-loop** | Schedule recurring, self-cleaning prompts inside a session |
+| **nested-agents-md** | Inject nearby `AGENTS.md` conventions when reading files |
+| **pi-code-previews** | Syntax-highlighted previews for tool calls (powered by [shiki](https://shiki.style)) |
 
 ---
 
 ## Installation
 
 ```bash
-pi install git:github.com/tmdgusya/roach-pi
+pi install git:github.com/akillness/jeo_pi
 ```
 
 Restart `pi`, then run setup once:
@@ -93,16 +124,16 @@ Restart `pi`, then run setup once:
 /setup
 ```
 
-`/setup` writes `quietStartup: true` to `~/.pi/agent/settings.json` so ROACH PI can own the startup banner instead of duplicating pi's default extension listing.
+`/setup` writes `quietStartup: true` to `~/.pi/agent/settings.json` so jeo_pi can own the startup banner instead of duplicating pi's default extension listing.
 
 > [!WARNING]
-> If you have the `superpowers` skill installed, remove it before using ROACH PI. It can define skill names that collide with this extension's bundled skills, and pi does not guarantee extension override order for duplicate skills.
+> If you have the `superpowers` skill installed, remove it before using jeo_pi. It can define skill names that collide with jeo_pi's bundled `spec-*` and `agentic-*` skills, and pi does not guarantee extension override order for duplicate skills.
 
 ---
 
 ## Quick Start
 
-Try the disciplined path on a real task — from fuzzy idea to verified implementation in minutes:
+From a fuzzy idea to a verified implementation:
 
 ```text
 /clarify Add a feature that exports review results as Markdown
@@ -114,7 +145,7 @@ After the Goal Contract is clear, run durable execution:
 /goal
 ```
 
-The runtime creates/activates the goal, drives implementation, records evidence, requests verifier-guarded completion, and continues after verifier FAIL until PASS. Use `/goal status` only when you want to inspect state without starting work.
+The runtime creates/activates the goal, drives implementation, records evidence, requests verifier-guarded completion, and **continues after a verifier FAIL until PASS**. Use `/goal status` to inspect state without starting work.
 
 Before merging non-trivial changes, run a review:
 
@@ -122,7 +153,7 @@ Before merging non-trivial changes, run a review:
 /review
 ```
 
-Quick system checks for visibility:
+Quick system checks:
 
 ```text
 /fff-health
@@ -132,13 +163,29 @@ Quick system checks for visibility:
 
 ---
 
+## The `spec-*` skill family
+
+jeo_pi ships jeo-code's full spec-first workflow as a five-skill family under `extensions/agentic-harness/skills/`:
+
+| Skill | Reflects (jeo-code) | Purpose |
+|---|---|---|
+| `spec-stack` | `deep-interview` | End-to-end loop and ambiguity gate (incl. `--auto` non-interactive clarification) |
+| `spec-deep-dive` | `deep-dive` | Root-cause investigation before requirements, for defects with an unknown cause |
+| `spec-blueprint` | `ralplan` | Planner / Architect / Critic planning that preserves contested decisions |
+| `spec-execute` | `team` | Per-task executor loop against the plan |
+| `spec-verify` | `ultragoal` | Evidence-backed acceptance-criteria verification |
+
+These are backed by read-only **planner / architect / critic** role agents and a write-capable **executor** agent in
+`extensions/agentic-harness/agents/`, plus the bundled `agentic-*` reasoning skills (brainstorming, clarification,
+goal, simplify, systematic-debugging, and the Karpathy / Rob-Pike style guides).
+
+---
+
 ## Clarify, then _goal_.
 
 Vague requests should not become vague code.
 
-**`/clarify`** forces ambiguity into the open before implementation starts. It asks one focused question, offers concrete choices when useful, and explores relevant files with an `explorer` subagent in parallel.
-
-The output is a **Goal Contract** — a structured summary of the objective, scope, constraints, success criteria, evidence required, risks, and suggested initial subgoals.
+**`/clarify`** forces ambiguity into the open before implementation starts. It asks one focused question, offers concrete choices when useful, and explores relevant files with an `explorer` subagent in parallel. The output is a **Goal Contract** — objective, scope, constraints, success criteria, evidence required, risks, and suggested initial subgoals.
 
 **`/goal`** owns durable execution. It tracks queued goals, active subgoals, evidence, blockers, verifier receipts, and automatic continuation. Completion is guarded by `reviewer-verifier`; a target cannot complete until the verifier returns PASS.
 
@@ -157,10 +204,8 @@ The output is a **Goal Contract** — a structured summary of the objective, sco
 The `subagent` tool delegates work to specialized agents running as separate `pi` processes.
 
 <p align="center">
-  <img src="assets/subagent-modes.svg" alt="ROACH PI subagent modes: single, parallel, chain, async" width="88%">
+  <img src="assets/subagent-modes.svg" alt="jeo_pi subagent modes: single, parallel, chain, async" width="88%">
 </p>
-
-Supported modes:
 
 | Mode | Use it for |
 |---|---|
@@ -175,8 +220,6 @@ Async subagents support `asyncDependency: "needed-before-final"` when the lead a
 
 ## Catch it, _before it ships_.
 
-Catch problems before they ship.
-
 **`/review`** — a quick, integrated single-pass review of a PR, branch, or local diff. It resolves the target (PR number, PR URL, branch name, or an auto-detected local diff), then streams findings across bugs, security, performance, test coverage, and consistency directly to chat. No subagents, no saved file — just fast feedback.
 
 | Command | Description |
@@ -190,10 +233,10 @@ Catch problems before they ship.
 The bundled FFF extension upgrades pi's file and content search with git-aware ranking and frecency.
 
 <p align="center">
-  <img src="assets/fff-search-preview.svg" alt="ROACH PI FFF search: find, grep, multi_grep, @ autocomplete" width="88%">
+  <img src="assets/fff-search-preview.svg" alt="jeo_pi FFF search: find, grep, multi_grep, @ autocomplete" width="88%">
 </p>
 
-- **`find`** — fuzzy file name search with frecency and git-aware ranking
+- **`find`** — fuzzy file-name search with frecency and git-aware ranking
 - **`grep`** — content search with pagination and smart-case behavior
 - **`multi_grep`** — multi-pattern OR search in one pass
 - **`@` autocomplete** — replace pi's default file picker with FFF suggestions (toggle with `/fff-mode both`)
@@ -233,7 +276,7 @@ mcp({ search: "screenshot" })              # discover tools by keyword
 mcp({ tool: "chrome_devtools_take_screenshot", args: '{"format": "png"}' })  # call a tool
 ```
 
-Servers are **lazy by default** — they only connect when you actually use their tools, and disconnect after idle timeout. Specific tools can be promoted to first-class Pi tools via `directTools` config.
+Servers are **lazy by default** — they only connect when you use their tools, and disconnect after idle timeout. Specific tools can be promoted to first-class pi tools via `directTools` config.
 
 | Command | Description |
 |---|---|
@@ -244,14 +287,14 @@ Servers are **lazy by default** — they only connect when you actually use thei
 | `/mcp logout <server>` | Clear stored OAuth credentials |
 | `/mcp-auth [server]` | OAuth authentication flow |
 
-Configuration reads standard MCP files automatically: `~/.config/mcp/mcp.json`, `.mcp.json`, or Pi-specific overrides in `~/.pi/agent/mcp.json`.
+Configuration reads standard MCP files automatically: `~/.config/mcp/mcp.json`, `.mcp.json`, or pi-specific overrides in `~/.pi/agent/mcp.json`.
 
 ---
 
 ## Memory that _recalls_.
 
 <p align="center">
-  <img src="assets/lsp-memory-preview.svg" alt="ROACH PI LSP tools and workspace memory save/recall flow" width="88%">
+  <img src="assets/lsp-memory-preview.svg" alt="jeo_pi LSP tools and workspace memory save/recall flow" width="88%">
 </p>
 
 Workspace memory stores important findings as structured records under pi's agent directory, scoped by workspace. It recalls relevant records into future sessions automatically.
@@ -415,7 +458,6 @@ PI_ENABLE_TEAM_MODE=1 pi
 
 Disabled by default. Exposes the `team` tool and makes `/team` functional.
 
-
 ### Sandboxed Bash Approval
 
 ```bash
@@ -445,16 +487,19 @@ Create project-local `.pi/lsp-client.json` or user-global `~/.pi/lsp-client.json
 
 ```text
 extensions/
-  agentic-harness/     # workflows, subagents, review, team, webfetch, footer
+  agentic-harness/     # workflow runtime, subagents, review, team, webfetch
+    skills/            # spec-* family + agentic-* reasoning skills
+    agents/            # planner / architect / critic / executor role agents
   fff-search/          # FFF-backed find/grep/multi_grep and @ autocomplete
   session-loop/        # recurring session prompts
   workspace-memory/    # save/recall workspace memory
+  pi-mcp-adapter/      # lazy MCP proxy
   pi-code-previews/    # syntax-highlighted tool-call previews (shiki)
+.ouroboros/seeds/      # immutable frozen Goal Contracts
+docs/jeo-pi/           # spec-stack mapping and design notes
 docs/engineering-discipline/
-  context/             # Context Briefs
-  plans/               # implementation plans
-  reviews/             # review outputs
-assets/                # README visuals
+  context/ plans/ reviews/   # Context Briefs, plans, review outputs
+assets/                # README visuals (SVG graphs + mascot)
 ```
 
 Bundled package dependencies also include `pi-lsp-client`, `pi-mcp-adapter`, `@code-yeongyu/pi-nested-agents-md`, and `shiki` (powering `pi-code-previews`).
@@ -463,7 +508,14 @@ Bundled package dependencies also include `pi-lsp-client`, `pi-mcp-adapter`, `@c
 
 ## Development
 
-Install dependencies in the extension you are changing, then run that extension's tests and type checks:
+Run the workspace test suite and type check from the repo root:
+
+```bash
+npm test          # vitest run extensions/
+npm run typecheck # tsc -p extensions/agentic-harness/tsconfig.json --noEmit
+```
+
+To build/check a single extension, use the per-extension scripts:
 
 ```bash
 npm --prefix extensions/agentic-harness install
@@ -471,28 +523,16 @@ npm --prefix extensions/agentic-harness test
 npm --prefix extensions/agentic-harness run build
 ```
 
-For a broader local sweep, repeat the same pattern per extension:
-
-```bash
-npm --prefix extensions/agentic-harness test && npm --prefix extensions/agentic-harness run build
-npm --prefix extensions/fff-search test && npm --prefix extensions/fff-search run build
-npm --prefix extensions/session-loop test && npm --prefix extensions/session-loop run build
-npm --prefix extensions/workspace-memory test && npm --prefix extensions/workspace-memory run build
-npm --prefix extensions/pi-code-previews test && npm --prefix extensions/pi-code-previews run check
-```
-
 `pi-code-previews` exposes `check` (typecheck + lint + format) instead of `build`; the rest expose `build` (`tsc --noEmit`).
-
-There is no root `npm test` script in `package.json`; use the extension-level commands above.
 
 ---
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). For larger changes, prefer the same discipline the extension enforces: clarify the goal, write a plan, implement in small steps, and verify with tests or a focused manual check.
+See [CONTRIBUTING.md](CONTRIBUTING.md). For larger changes, prefer the same discipline jeo_pi enforces: clarify the goal, freeze a seed, write a plan, implement in small steps, and verify with tests or a focused manual check before claiming done.
 
 ---
 
 ## License
 
-MIT. The package metadata in [package.json](package.json) declares the license.
+MIT — see [package.json](package.json). jeo_pi is a fork of [roach-pi](https://github.com/tmdgusya/roach-pi) (MIT) and reflects workflows from [jeo-code](https://github.com/akillness/jeo-code).
