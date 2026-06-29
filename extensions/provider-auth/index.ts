@@ -1,107 +1,41 @@
 /**
- * pi-provider-auth: unified provider authentication & setup for jeo_pi.
+ * pi-provider-auth: unified provider authentication for jeo_pi, routed entirely
+ * through pi's built-in `/login`.
  *
- * Borrows jeo-code's provider-login approach so jeo_pi can authenticate and use
- * Claude, Google Antigravity, and API providers (Ollama, LM Studio, and any
- * other OpenAI-compatible endpoint):
- *   - Claude:       pi's built-in /login (Anthropic OAuth) or ANTHROPIC_API_KEY.
- *   - Antigravity:  Google Cloud Code Assist OAuth + a custom CCA stream handler.
- *   - Other APIs:   models.json custom providers, configured via /provider.
+ * Borrows jeo-code's provider-login approach so jeo_pi authenticates and uses
+ * Claude, Google Antigravity, and API providers without a bespoke command:
+ *   - Claude:      registered here with jeo-code's Anthropic OAuth flow + Claude
+ *                  Code streaming so /login → "Use a subscription" → Claude
+ *                  Pro/Max responds (or "Use an API key" for ANTHROPIC_API_KEY).
+ *   - Antigravity: registered here with a Google Cloud Code Assist OAuth block so
+ *                  it appears under /login → "Use a subscription" → Google Antigravity.
+ *   - Other APIs:  any OpenAI-compatible endpoint in ~/.pi/agent/models.json is
+ *                  loaded at startup so it is selectable via /login → "Use an API key"
+ *                  and /model.
+ *
+ * There is intentionally no `/provider` command — everything funnels through the
+ * native /login subscription/API-key selectors, mirroring jeo-code's login UX.
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { getAgentDir } from "@mariozechner/pi-coding-agent";
-import { modelsJsonPath } from "./models-config.js";
-import {
-  applyToConfig,
-  parseProviderCommand,
-  readModelsConfig,
-  statusReport,
-  toRuntimeModel,
-  writeModelsConfig,
-} from "./command.js";
+import { registerAnthropicProvider } from "./anthropic/register.js";
 import { registerAntigravityProvider } from "./antigravity/register.js";
+import { loadCustomProvidersFromConfig } from "./loader.js";
 
 export default function providerAuthExtension(pi: ExtensionAPI): void {
-  // Register Antigravity eagerly so it appears under /login → "Use a subscription".
+  // Override Claude (Anthropic) OAuth + streaming with jeo-code's proven flow so
+  // the Pro/Max subscription actually responds under /login → "Use a subscription".
+  registerAnthropicProvider(pi);
+
+  // Register Antigravity so it appears under /login → "Use a subscription"
+  // (alongside the Claude provider above).
   registerAntigravityProvider(pi);
 
-  pi.registerCommand("provider", {
-    description: "Authenticate / configure providers: claude, antigravity, ollama, lmstudio, api",
-    handler: async (args, ctx) => {
-      const action = parseProviderCommand(args);
-
-      if (action.kind === "error") {
-        ctx.ui.notify(action.message, "error");
-        return;
-      }
-
-      if (action.kind === "status") {
-        ctx.ui.notify(statusReport(readModelsConfig(modelsJsonPath(getAgentDir()))), "info");
-        return;
-      }
-
-      if (action.kind === "claude") {
-        ctx.ui.notify(
-          "Claude is built in. Run /login → \"Use a subscription\" → Anthropic (Claude Pro/Max OAuth), or run /login → \"Use an API key\" to enter ANTHROPIC_API_KEY. Then pick a model with /model.",
-          "info",
-        );
-        return;
-      }
-
-      if (action.kind === "antigravity") {
-        registerAntigravityProvider(pi);
-        ctx.ui.notify(
-          "Antigravity registered. Run /login → \"Use a subscription\" → Google Antigravity (Cloud Code Assist agent) to authenticate, then pick antigravity/* with /model.",
-          "info",
-        );
-        return;
-      }
-
-      const path = modelsJsonPath(getAgentDir());
-      let config;
-      try {
-        config = readModelsConfig(path);
-      } catch (err) {
-        ctx.ui.notify((err as Error).message, "error");
-        return;
-      }
-
-      if (action.kind === "remove") {
-        if (!config.providers?.[action.name]) {
-          ctx.ui.notify(`No custom provider named '${action.name}' in models.json.`, "warning");
-          return;
-        }
-        writeModelsConfig(path, applyToConfig(config, action));
-        pi.unregisterProvider(action.name);
-        ctx.ui.notify(`Removed provider '${action.name}' from models.json.`, "info");
-        return;
-      }
-
-      // configure
-      const { name, provider } = action;
-      writeModelsConfig(path, applyToConfig(config, action));
-
-      // Register at runtime so the provider is usable without a restart.
-      if (provider.models.length > 0) {
-        pi.registerProvider(name, {
-          name: provider.name ?? name,
-          baseUrl: provider.baseUrl,
-          api: provider.api,
-          apiKey: provider.apiKey,
-          headers: provider.headers,
-          models: provider.models.map((m) => toRuntimeModel(provider, m)),
-        });
-        ctx.ui.notify(
-          `Configured '${name}' → ${provider.baseUrl}. Models: ${provider.models.map((m) => m.id).join(", ")}. Select with /model.`,
-          "info",
-        );
-      } else {
-        ctx.ui.notify(
-          `Saved '${name}' → ${provider.baseUrl} to models.json. Add models with /provider ${name} <baseUrl> <modelId>, then restart or re-run to load them.`,
-          "info",
-        );
-      }
-    },
+  // Load any models.json custom providers so they surface under
+  // /login → "Use an API key" and /model, without a bespoke command. A
+  // malformed models.json is logged (not thrown) so it never blocks /login.
+  loadCustomProvidersFromConfig(pi, getAgentDir(), (message) => {
+    console.error(`[pi-provider-auth] ${message}`);
   });
 }

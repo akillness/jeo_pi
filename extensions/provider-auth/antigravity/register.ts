@@ -13,35 +13,37 @@ import { getAntigravityApiKey, loginAntigravity, refreshAntigravityToken } from 
 export const ANTIGRAVITY_PROVIDER = "antigravity";
 
 /**
- * Canonical Antigravity model ids served via Cloud Code Assist, mirrored from
- * jeo-code's static catalog (`src/ai/model-catalog.ts` → ANTIGRAVITY_MODELS).
+ * Canonical Antigravity model ids served via Cloud Code Assist.
  *
- * These are the wire ids the CCA `streamGenerateContent` endpoint accepts once
- * the `antigravity/` provider prefix is stripped (see `cca.ts:antigravityModelId`).
- * The previous jeo_pi list shipped a bare `gemini-3-pro` that the backend does
- * not serve (real ids are the `-high`/`-low` thinking-depth variants).
+ * These are the bare wire ids the CCA `streamGenerateContent` endpoint accepts
+ * once the `antigravity/` provider prefix is stripped (see
+ * `cca.ts:antigravityModelId`). The list is VERIFIED against the live
+ * `v1internal:fetchAvailableModels` discovery endpoint — every id below is a
+ * key the backend actually serves. jeo-code's older static catalog shipped
+ * ghost ids (e.g. `claude-sonnet-4-5`, `gpt-5.5`, `gemini-3-pro-high`,
+ * `claude-opus-4-8-thinking`) that the backend rejects with HTTP 404
+ * "Requested entity was not found." — those are intentionally absent so pi
+ * never offers a model that fails at call time.
+ *
+ * `gemini-3.1-pro-high` is served by discovery but rejects streamGenerateContent
+ * with HTTP 400; its callable equivalent ("Gemini 3.1 Pro (High)") is shipped as
+ * `gemini-pro-agent`, so the broken id is excluded.
  */
 export const ANTIGRAVITY_MODEL_IDS = [
-  "claude-opus-4-5-thinking",
   "claude-opus-4-6-thinking",
-  "claude-opus-4-7",
-  "claude-opus-4-7-thinking",
-  "claude-opus-4-8",
-  "claude-opus-4-8-thinking",
-  "claude-sonnet-4-5",
-  "claude-sonnet-4-5-thinking",
   "claude-sonnet-4-6",
-  "claude-sonnet-4-6-thinking",
   "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
   "gemini-2.5-flash-thinking",
   "gemini-2.5-pro",
   "gemini-3-flash",
-  "gemini-3-pro-high",
-  "gemini-3-pro-low",
-  "gemini-3.1-pro-high",
+  "gemini-3-flash-agent",
+  "gemini-3.1-flash-lite",
   "gemini-3.1-pro-low",
+  "gemini-3.5-flash-extra-low",
+  "gemini-3.5-flash-low",
+  "gemini-pro-agent",
   "gpt-oss-120b-medium",
-  "gpt-5.5",
 ] as const;
 
 export interface AntigravityModel {

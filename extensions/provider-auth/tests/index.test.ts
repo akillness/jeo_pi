@@ -1,11 +1,9 @@
 import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
-import { existsSync, rmSync } from "fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "fs";
 
-// A throwaway agent dir so the handler's models.json read/writes never touch
-// the real ~/.pi. getAgentDir is the only symbol index.ts needs at runtime
-// from the pi runtime; everything else it imports is type-only. The dir is
-// created lazily by writeModelsConfig (mkdir recursive), so we only need a
-// unique path string here.
+// A throwaway agent dir so the loader's models.json reads never touch the real
+// ~/.pi. getAgentDir is the only symbol index.ts needs at runtime from the pi
+// runtime; everything else it imports is type-only.
 const h = vi.hoisted(() => ({
   agentDir: `${require("os").tmpdir()}/pi-provider-auth-${process.pid}-${Date.now()}`,
 }));
@@ -17,10 +15,7 @@ vi.mock("@mariozechner/pi-coding-agent", () => ({
 import providerAuthExtension from "../index.js";
 import { modelsJsonPath } from "../models-config.js";
 
-type Notice = { message: string; level: string };
-
 function harness() {
-  const notices: Notice[] = [];
   const registered: { name: string; config: any }[] = [];
   const unregistered: string[] = [];
   const commands = new Map<string, any>();
@@ -31,19 +26,12 @@ function harness() {
     registerCommand: (name: string, opts: any) => commands.set(name, opts),
   } as any;
 
-  const ctx = {
-    ui: { notify: (message: string, level: string) => notices.push({ message, level }) },
-  } as any;
-
   providerAuthExtension(pi);
-
-  const run = (args: string) => commands.get("provider").handler(args, ctx);
-  return { pi, ctx, notices, registered, unregistered, commands, run };
+  return { pi, registered, unregistered, commands };
 }
 
 describe("providerAuthExtension wiring", () => {
   beforeEach(() => {
-    // Start each test from a clean models.json.
     const p = modelsJsonPath(h.agentDir);
     if (existsSync(p)) rmSync(p);
   });
@@ -52,79 +40,72 @@ describe("providerAuthExtension wiring", () => {
     rmSync(h.agentDir, { recursive: true, force: true });
   });
 
-  it("registers antigravity on load and the /provider command", () => {
-    const { registered, commands } = harness();
+  it("registers antigravity on load so it appears under /login subscription", () => {
+    const { registered } = harness();
     expect(registered.some((r) => r.name === "antigravity")).toBe(true);
-    expect(commands.has("provider")).toBe(true);
-    expect(typeof commands.get("provider").handler).toBe("function");
-    expect(typeof commands.get("provider").description).toBe("string");
+    const ag = registered.find((r) => r.name === "antigravity")!;
+    // The oauth block is what makes it show under /login → "Use a subscription".
+    expect(ag.config.oauth).toBeTruthy();
+    expect(typeof ag.config.oauth.login).toBe("function");
   });
 
-  it("status action reports an info notice without writing models.json", async () => {
-    const { run, notices } = harness();
-    await run("status");
-    const last = notices.at(-1)!;
-    expect(last.level).toBe("info");
-    expect(last.message).toContain("Provider authentication");
-    expect(existsSync(modelsJsonPath(h.agentDir))).toBe(false);
+  it("registers the Claude (anthropic) override on load with oauth + streamSimple", () => {
+    const { registered } = harness();
+    const claude = registered.find((r) => r.name === "anthropic");
+    expect(claude).toBeTruthy();
+    // OAuth block → /login subscription; streamSimple → the response transport.
+    expect(claude!.config.oauth).toBeTruthy();
+    expect(typeof claude!.config.oauth.login).toBe("function");
+    expect(claude!.config.api).toBe("anthropic-messages");
+    expect(typeof claude!.config.streamSimple).toBe("function");
+    // No models declared → pi's built-in Claude catalogue is preserved.
+    expect(claude!.config.models).toBeUndefined();
   });
 
-  it("claude action gives built-in /login guidance", async () => {
-    const { run, notices } = harness();
-    await run("claude");
-    expect(notices.at(-1)!.level).toBe("info");
-    expect(notices.at(-1)!.message).toMatch(/\/login/);
+
+  it("does NOT register a /provider command (login is the only surface)", () => {
+    const { commands } = harness();
+    expect(commands.has("provider")).toBe(false);
+    expect(commands.size).toBe(0);
   });
 
-  it("antigravity action re-registers the provider and notifies", async () => {
-    const { run, notices, registered } = harness();
-    const before = registered.filter((r) => r.name === "antigravity").length;
-    await run("antigravity");
-    const after = registered.filter((r) => r.name === "antigravity").length;
-    expect(after).toBe(before + 1);
-    expect(notices.at(-1)!.message).toMatch(/Antigravity/);
-  });
-
-  it("unknown target surfaces an error notice", async () => {
-    const { run, notices } = harness();
-    await run("does-not-exist");
-    expect(notices.at(-1)!.level).toBe("error");
-  });
-
-  it("configuring ollama writes models.json and registers at runtime", async () => {
-    const { run, notices, registered } = harness();
-    await run("ollama http://localhost:11434 llama3.1");
-
-    expect(existsSync(modelsJsonPath(h.agentDir))).toBe(true);
+  it("loads custom providers from models.json at startup", () => {
+    const p = modelsJsonPath(h.agentDir);
+    mkdirSync(h.agentDir, { recursive: true });
+    writeFileSync(
+      p,
+      JSON.stringify({
+        providers: {
+          ollama: {
+            name: "Ollama (local)",
+            baseUrl: "http://localhost:11434/v1",
+            api: "openai-completions",
+            apiKey: "ollama",
+            models: [{ id: "llama3.1" }],
+          },
+        },
+      }),
+    );
+    const { registered } = harness();
     const reg = registered.filter((r) => r.name === "ollama");
     expect(reg).toHaveLength(1);
-    expect(reg[0].config.baseUrl).toBe("http://localhost:11434");
+    expect(reg[0].config.baseUrl).toBe("http://localhost:11434/v1");
     expect(reg[0].config.models.map((m: any) => m.id)).toContain("llama3.1");
-    expect(notices.at(-1)!.level).toBe("info");
-    expect(notices.at(-1)!.message).toContain("Select with /model");
   });
 
-  it("configuring without models persists but does not register a runtime provider", async () => {
-    // lmstudio's preset has no default models, so a bare configure persists the
-    // provider stub to models.json without registering a usable runtime model.
-    const { run, notices, registered } = harness();
-    await run("lmstudio http://localhost:1234");
-    expect(existsSync(modelsJsonPath(h.agentDir))).toBe(true);
-    expect(registered.some((r) => r.name === "lmstudio")).toBe(false);
-    expect(notices.at(-1)!.message).toContain("Add models");
-  });
-
-  it("removing a configured provider unregisters it and rewrites models.json", async () => {
-    const { run, unregistered } = harness();
-    await run("ollama http://localhost:11434 llama3.1");
-    await run("remove ollama");
-    expect(unregistered).toContain("ollama");
-  });
-
-  it("removing a non-existent provider warns and skips unregister", async () => {
-    const { run, notices, unregistered } = harness();
-    await run("remove ghost");
-    expect(notices.at(-1)!.level).toBe("warning");
-    expect(unregistered).not.toContain("ghost");
+  it("does not crash or register a provider when models.json is malformed", () => {
+    const p = modelsJsonPath(h.agentDir);
+    mkdirSync(h.agentDir, { recursive: true });
+    writeFileSync(p, "{ not json ");
+    const errs: string[] = [];
+    const spy = vi.spyOn(console, "error").mockImplementation((m?: any) => {
+      errs.push(String(m));
+    });
+    const { registered } = harness();
+    spy.mockRestore();
+    // Antigravity still registered (load not blocked); no models.json provider added.
+    expect(registered.some((r) => r.name === "antigravity")).toBe(true);
+    expect(registered.some((r) => r.name === "ollama")).toBe(false);
+    expect(errs.some((e) => /not valid JSON/.test(e))).toBe(true);
   });
 });

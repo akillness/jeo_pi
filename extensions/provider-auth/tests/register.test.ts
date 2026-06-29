@@ -85,36 +85,48 @@ describe("registerAntigravityProvider", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("mirrors jeo-code's antigravity catalog ids (no bogus bare gemini-3-pro)", () => {
+  it("ships only model ids the live CCA backend actually serves", () => {
     const { pi, providers } = fakePi();
     registerAntigravityProvider(pi);
     const ids: string[] = providers[0].config.models.map((m: any) => m.id);
 
-    // Real CCA thinking-depth variants, not the bare id the backend rejects.
-    expect(ids).toContain("antigravity/gemini-3-pro-high");
-    expect(ids).toContain("antigravity/gemini-3-pro-low");
-    expect(ids).not.toContain("antigravity/gemini-3-pro");
-    // Representative coverage across the Claude / Gemini / GPT families.
-    expect(ids).toContain("antigravity/claude-sonnet-4-5");
-    expect(ids).toContain("antigravity/claude-opus-4-8-thinking");
-    expect(ids).toContain("antigravity/gpt-5.5");
+    // Verified against v1internal:fetchAvailableModels — representative coverage
+    // across the Claude / Gemini / GPT families.
+    expect(ids).toContain("antigravity/claude-sonnet-4-6");
+    expect(ids).toContain("antigravity/claude-opus-4-6-thinking");
+    expect(ids).toContain("antigravity/gemini-2.5-flash");
+    expect(ids).toContain("antigravity/gemini-pro-agent");
     expect(ids).toContain("antigravity/gpt-oss-120b-medium");
+
+    // Ghost ids the backend rejects with HTTP 404 must never ship — these
+    // exact ids returned "Requested entity was not found." in live testing.
+    expect(ids).not.toContain("antigravity/claude-sonnet-4-5");
+    expect(ids).not.toContain("antigravity/claude-opus-4-8-thinking");
+    expect(ids).not.toContain("antigravity/gpt-5.5");
+    expect(ids).not.toContain("antigravity/gemini-3-pro-high");
+    expect(ids).not.toContain("antigravity/gemini-3-pro-low");
+    expect(ids).not.toContain("antigravity/gemini-3-pro");
+    // gemini-3.1-pro-high is served by discovery but 400s on streamGenerateContent.
+    expect(ids).not.toContain("antigravity/gemini-3.1-pro-high");
+
     // Every id carries the provider prefix exactly once.
     for (const id of ids) expect(id.startsWith("antigravity/")).toBe(true);
     expect(ids.length).toBe(ANTIGRAVITY_MODEL_IDS.length);
   });
 
   it("derives per-family capabilities the way jeo-code's catalog does", () => {
-    const claude = toAntigravityModel("claude-sonnet-4-5");
+    const claude = toAntigravityModel("claude-sonnet-4-6");
     expect(claude.contextWindow).toBe(200_000);
     expect(claude.maxTokens).toBe(64_000);
     expect(claude.input).toEqual(["text", "image"]);
 
+    // gpt-5 family is no longer served by the backend, but the capability rule
+    // for it must still hold (the function stays future-proof for re-listing).
     const gpt5 = toAntigravityModel("gpt-5.5");
     expect(gpt5.contextWindow).toBe(400_000);
     expect(gpt5.maxTokens).toBe(128_000);
 
-    const gemini = toAntigravityModel("gemini-3-pro-high");
+    const gemini = toAntigravityModel("gemini-pro-agent");
     expect(gemini.contextWindow).toBe(1_000_000);
     expect(gemini.maxTokens).toBe(65_536);
     expect(gemini.reasoning).toBe(true);
