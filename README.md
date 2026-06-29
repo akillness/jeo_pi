@@ -11,10 +11,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/akillness/jeo_pi/releases"><img src="https://img.shields.io/github/v/release/akillness/jeo_pi?style=flat&colorA=17141C&color=3FB950&label=release" alt="Latest release"></a>
-  <a href="https://github.com/akillness/jeo_pi/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/akillness/jeo_pi/ci.yml?branch=main&style=flat&colorA=17141C&label=CI" alt="CI"></a>
-  <a href="https://github.com/akillness/jeo_pi/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/akillness/jeo_pi/release.yml?branch=main&style=flat&colorA=17141C&label=release%20pipeline" alt="Release pipeline"></a>
-  <a href="https://akillness.github.io/jeo_pi/"><img src="https://img.shields.io/badge/docs-pages-56C5E8?style=flat&colorA=17141C" alt="Docs site"></a>
+  <a href="https://github.com/akillness/jeo-pi/releases"><img src="https://img.shields.io/github/v/release/akillness/jeo-pi?style=flat&colorA=17141C&color=3FB950&label=release" alt="Latest release"></a>
+  <a href="https://github.com/akillness/jeo-pi/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/akillness/jeo-pi/ci.yml?branch=main&style=flat&colorA=17141C&label=CI" alt="CI"></a>
+  <a href="https://github.com/akillness/jeo-pi/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/akillness/jeo-pi/release.yml?branch=main&style=flat&colorA=17141C&label=release%20pipeline" alt="Release pipeline"></a>
+  <a href="https://akillness.github.io/jeo-pi/"><img src="https://img.shields.io/badge/docs-pages-56C5E8?style=flat&colorA=17141C" alt="Docs site"></a>
   <a href="package.json"><img src="https://img.shields.io/badge/license-MIT-56C5E8?style=flat&colorA=17141C" alt="MIT license"></a>
   <a href="https://github.com/badlogic/pi-mono"><img src="https://img.shields.io/badge/pi-0.72.x-8B5CF6?style=flat&colorA=17141C" alt="pi 0.72.x"></a>
   <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-D6409F?style=flat&colorA=17141C&logo=typescript&logoColor=white" alt="TypeScript"></a>
@@ -115,7 +115,7 @@ Eight bundled extensions cooperate around the agentic-harness core:
 ## Installation
 
 ```bash
-pi install git:github.com/akillness/jeo_pi
+pi install git:github.com/akillness/jeo-pi
 ```
 
 Restart `pi`, then run setup once:
