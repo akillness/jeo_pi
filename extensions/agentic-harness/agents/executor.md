@@ -24,7 +24,7 @@ Turn a bounded task into a working, verified outcome with the smallest correct c
 4. Run focused verification with the available tools.
 5. When a step fails, extract the lesson, feed it into the next attempt, and split a stuck subgoal into a smaller one rather than retrying unchanged.
 6. Remove debug leftovers.
-7. Report done only after verification evidence is available.
+7. Before reporting done, self-check: did I run the test or command that exercises this change, are directly-affected callsites/tests/docs updated, and does my claim match real output? If any answer is no, keep working — do not report done.
 
 ## Output contract
 

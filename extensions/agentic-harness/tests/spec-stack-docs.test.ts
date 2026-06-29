@@ -85,6 +85,16 @@ describe("spec-stack role agents reflected from jeo-code", () => {
     const executor = byName.get("executor")!;
     expect(executor.tools ?? []).toHaveLength(0);
   });
+
+  it("executor carries jeo-code's done self-check verification gate", async () => {
+    const agents = await loadAgentsFromDir(agentsDir, "bundled");
+    const executor = agents.find((a) => a.name === "executor")!;
+    const prompt = executor.systemPrompt;
+    expect(prompt).toMatch(/self-check/i);
+    expect(prompt).toMatch(/run the test or command that exercises this change/i);
+    expect(prompt).toMatch(/callsites[/, ]+tests[/, ]+(and )?docs/i);
+    expect(prompt).toMatch(/does my claim match real output/i);
+  });
 });
 
 describe("spec-deep-dive skill docs reflected from jeo-code", () => {

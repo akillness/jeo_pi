@@ -60,3 +60,5 @@ evolution_log:
     note: "Reflect jeo-code agents/AGENTS.md discipline ('non-mutating agents MUST NOT be given mutating tools'): add tests/agents-capability.test.ts enforcing the read-only/write capability column in agents/AGENTS.md against each agent's tools frontmatter (read-only roles declare a restricted tools list with no edit/write; write roles keep mutating access). Verified vitest extensions = 818 pass."
   - rev: 16
     note: "Reflect jeo-code engine.ts runtime integrity disciplines: add INTEGRITY_RULES (correctness-first, never-fabricate-tool-results, no-stubs, re-read-on-failure, own-mistakes, decline-malware, untrusted-data) auto-injected alongside KARPATHY_RULES into worker/plan-worker agents + discipline.test.ts assertions. Verified vitest extensions = 820 pass."
+  - rev: 17
+    note: "Reflect jeo-code engine.ts done self-check verification gate into executor.md (before reporting done: ran the exercising test? callsites/tests/docs updated? claim matches real output?) + spec-stack-docs.test.ts assertion. Verified vitest extensions = 821 pass."
