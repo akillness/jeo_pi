@@ -90,15 +90,16 @@ Credentials and the discovered project id persist to `~/.pi/agent/auth.json`.
 
 ## Antigravity model catalogue
 
-`ANTIGRAVITY_MODEL_IDS` (`antigravity/register.ts`) matches `jeo-code`'s
-`ANTIGRAVITY_MODELS` — 20 ids served via Cloud Code Assist:
+`ANTIGRAVITY_MODEL_IDS` (`antigravity/register.ts`) is the live-routable CCA
+catalogue for pi's OAuth path. `jeo-code` carries a broader static catalogue,
+but pi only offers ids that avoid HTTP 400/404 on `streamGenerateContent`:
 
-- **Claude:** `claude-opus-4-5-thinking`, `claude-opus-4-6-thinking`,
-  `claude-opus-4-7`(+`-thinking`), `claude-opus-4-8`(+`-thinking`),
-  `claude-sonnet-4-5`(+`-thinking`), `claude-sonnet-4-6`(+`-thinking`)
-- **Gemini:** `gemini-2.5-flash`(+`-thinking`), `gemini-2.5-pro`,
-  `gemini-3-flash`, `gemini-3-pro-high/low`, `gemini-3.1-pro-high/low`
-- **Other:** `gpt-oss-120b-medium`, `gpt-5.5`
+- **Claude:** `claude-opus-4-6-thinking`, `claude-sonnet-4-6`
+- **Gemini:** `gemini-2.5-flash`, `gemini-2.5-flash-lite`,
+  `gemini-2.5-flash-thinking`, `gemini-2.5-pro`, `gemini-3-flash`,
+  `gemini-3-flash-agent`, `gemini-3.1-flash-lite`, `gemini-3.1-pro-low`,
+  `gemini-3.5-flash-extra-low`, `gemini-3.5-flash-low`, `gemini-pro-agent`
+- **Other:** `gpt-oss-120b-medium`
 
 Capability rules (`toAntigravityModel`) follow jeo-code's catalogue:
 

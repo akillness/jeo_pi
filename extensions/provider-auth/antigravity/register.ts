@@ -15,19 +15,13 @@ export const ANTIGRAVITY_PROVIDER = "antigravity";
 /**
  * Canonical Antigravity model ids served via Cloud Code Assist.
  *
- * These are the bare wire ids the CCA `streamGenerateContent` endpoint accepts
- * once the `antigravity/` provider prefix is stripped (see
- * `cca.ts:antigravityModelId`). The list is VERIFIED against the live
- * `v1internal:fetchAvailableModels` discovery endpoint — every id below is a
- * key the backend actually serves. jeo-code's older static catalog shipped
- * ghost ids (e.g. `claude-sonnet-4-5`, `gpt-5.5`, `gemini-3-pro-high`,
- * `claude-opus-4-8-thinking`) that the backend rejects with HTTP 404
- * "Requested entity was not found." — those are intentionally absent so pi
- * never offers a model that fails at call time.
- *
- * `gemini-3.1-pro-high` is served by discovery but rejects streamGenerateContent
- * with HTTP 400; its callable equivalent ("Gemini 3.1 Pro (High)") is shipped as
- * `gemini-pro-agent`, so the broken id is excluded.
+ * jeo-code carries a broader static catalogue, but the CCA backend only routes
+ * the ids below in the pi OAuth path today. Keep this list live-verified: every
+ * offered id must avoid HTTP 400/404 on `streamGenerateContent`. In particular,
+ * most aspirational Claude aliases (`claude-opus-4-8*`, `claude-sonnet-4-5*`,
+ * etc.) are ghost ids for this backend; offering them makes Anthropic-via-
+ * Antigravity look broken. `cca.ts:antigravityModelId` strips the
+ * `antigravity/` prefix before the request hits CCA.
  */
 export const ANTIGRAVITY_MODEL_IDS = [
   "claude-opus-4-6-thinking",

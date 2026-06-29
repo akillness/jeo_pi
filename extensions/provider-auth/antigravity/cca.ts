@@ -45,18 +45,42 @@ const JSON_SCHEMA_META_KEYS = new Set([
 ]);
 
 /**
- * Strip JSON-Schema meta declarations a tool schema may carry. Mirrors pi-ai's
- * `sanitizeForOpenApi` — the legacy OpenAPI `parameters` form (used for Claude,
- * which the CCA backend translates into Anthropic `input_schema`) rejects unknown
- * meta keywords. Pure + recursive.
+ * Strip/normalize JSON-Schema declarations the CCA OpenAPI `parameters` field
+ * rejects. Claude-via-CCA still uses this legacy OpenAPI subset, so `const`
+ * must become a single-value `enum`; otherwise real pi runs fail before the
+ * model sees the prompt.
  */
 export function sanitizeOpenApiSchema(schema: unknown): unknown {
   if (Array.isArray(schema)) return schema.map(sanitizeOpenApiSchema);
   if (typeof schema !== "object" || schema === null) return schema;
+  const input = schema as Record<string, unknown>;
   const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(schema as Record<string, unknown>)) {
-    if (JSON_SCHEMA_META_KEYS.has(k)) continue;
+  for (const [k, v] of Object.entries(input)) {
+    if (JSON_SCHEMA_META_KEYS.has(k) || k === "const") continue;
     out[k] = sanitizeOpenApiSchema(v);
+  }
+  if ("const" in input && !("enum" in out)) out.enum = [input.const];
+
+  // Anthropic's CCA bridge rejects some valid-but-complex JSON Schema unions in
+  // tool input_schema. Collapse pure literal unions to a plain enum.
+  const anyOf = out.anyOf;
+  if (Array.isArray(anyOf) && anyOf.length > 0) {
+    const values: unknown[] = [];
+    let type: unknown;
+    let literalUnion = true;
+    for (const branch of anyOf) {
+      if (typeof branch !== "object" || branch === null) { literalUnion = false; break; }
+      const b = branch as Record<string, unknown>;
+      if (!Array.isArray(b.enum) || b.enum.length !== 1) { literalUnion = false; break; }
+      if (type === undefined) type = b.type;
+      else if (b.type !== undefined && b.type !== type) { literalUnion = false; break; }
+      values.push(b.enum[0]);
+    }
+    if (literalUnion) {
+      delete out.anyOf;
+      if (type !== undefined) out.type = type;
+      out.enum = values;
+    }
   }
   return out;
 }
@@ -76,11 +100,18 @@ export function antigravityFunctionDeclarations(
   tools: NonNullable<Context["tools"]>,
   isClaude: boolean,
 ): Array<Record<string, unknown>> {
-  return tools.map((t) => ({
-    name: t.name,
-    description: t.description,
-    ...(isClaude ? { parameters: sanitizeOpenApiSchema(t.parameters) } : { parametersJsonSchema: t.parameters }),
-  }));
+  return tools.map((t) => {
+    const parameters = isClaude ? sanitizeOpenApiSchema(t.parameters) : t.parameters;
+    if (process.env.PI_ANTIGRAVITY_DEBUG === "1") {
+      // eslint-disable-next-line no-console
+      console.error(`[ANTIGRAVITY_DEBUG] tool=${t.name} claude=${isClaude} schema=${JSON.stringify(parameters)}`);
+    }
+    return {
+      name: t.name,
+      description: t.description,
+      ...(isClaude ? { parameters } : { parametersJsonSchema: parameters }),
+    };
+  });
 }
 
 /**

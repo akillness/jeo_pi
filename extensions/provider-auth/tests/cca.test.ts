@@ -142,7 +142,7 @@ describe("buildCcaRequest", () => {
     expect(fn.parameters).toBeUndefined();
   });
 
-  it("sends a Claude tool schema as meta-stripped parameters (CCA → Anthropic input_schema)", () => {
+  it("sends a Claude tool schema as OpenAPI-safe parameters (CCA → Anthropic input_schema)", () => {
     const schema = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       type: "object",
@@ -155,9 +155,9 @@ describe("buildCcaRequest", () => {
     }).body).request.tools[0].functionDeclarations[0];
     expect(fn.parametersJsonSchema).toBeUndefined();
     expect(fn.parameters.$schema).toBeUndefined();
-    // const/anyOf are preserved (Anthropic input_schema accepts them); only
-    // JSON-Schema meta declarations are dropped.
-    expect(fn.parameters.properties.mode.anyOf).toEqual([{ const: "fast" }, { const: "slow" }]);
+    // The CCA→Anthropic bridge rejects JSON-Schema `const` and pure anyOf literal
+    // unions; collapse them to a plain enum.
+    expect(fn.parameters.properties.mode).toEqual({ enum: ["fast", "slow"] });
   });
 });
 
@@ -180,6 +180,12 @@ describe("sanitizeOpenApiSchema", () => {
     expect((out.properties as any).items.items.$comment).toBeUndefined();
   });
 
+  it("converts const/anyOf literal unions to enum for CCA OpenAPI parameters", () => {
+    expect(sanitizeOpenApiSchema({ anyOf: [{ const: "a" }, { const: "b" }] })).toEqual({
+      enum: ["a", "b"],
+    });
+  });
+
   it("returns primitives and arrays unchanged in shape", () => {
     expect(sanitizeOpenApiSchema("s")).toBe("s");
     expect(sanitizeOpenApiSchema(null)).toBeNull();
@@ -196,10 +202,10 @@ describe("antigravityFunctionDeclarations", () => {
     expect(fn.parameters).toBeUndefined();
   });
 
-  it("uses meta-stripped parameters for Claude models", () => {
+  it("uses OpenAPI-safe parameters for Claude models", () => {
     const [fn] = antigravityFunctionDeclarations(tools, true);
     expect(fn.parametersJsonSchema).toBeUndefined();
-    expect(fn.parameters).toEqual({ type: "object", properties: { k: { const: "v" } } });
+    expect(fn.parameters).toEqual({ type: "object", properties: { k: { enum: ["v"] } } });
   });
 });
 

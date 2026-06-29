@@ -85,29 +85,28 @@ describe("registerAntigravityProvider", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("ships only model ids the live CCA backend actually serves", () => {
+  it("ships only live-routable Antigravity model ids", () => {
     const { pi, providers } = fakePi();
     registerAntigravityProvider(pi);
     const ids: string[] = providers[0].config.models.map((m: any) => m.id);
 
-    // Verified against v1internal:fetchAvailableModels — representative coverage
-    // across the Claude / Gemini / GPT families.
+    expect(ids).toEqual(ANTIGRAVITY_MODEL_IDS.map((id) => `antigravity/${id}`));
+
+    // Representative coverage across the live Anthropic / Gemini / GPT families.
     expect(ids).toContain("antigravity/claude-sonnet-4-6");
     expect(ids).toContain("antigravity/claude-opus-4-6-thinking");
     expect(ids).toContain("antigravity/gemini-2.5-flash");
     expect(ids).toContain("antigravity/gemini-pro-agent");
     expect(ids).toContain("antigravity/gpt-oss-120b-medium");
 
-    // Ghost ids the backend rejects with HTTP 404 must never ship — these
-    // exact ids returned "Requested entity was not found." in live testing.
+    // Ghost ids the backend rejects with HTTP 404/400 must never ship.
     expect(ids).not.toContain("antigravity/claude-sonnet-4-5");
+    expect(ids).not.toContain("antigravity/claude-sonnet-4-5-thinking");
+    expect(ids).not.toContain("antigravity/claude-sonnet-4-6-thinking");
+    expect(ids).not.toContain("antigravity/claude-opus-4-8");
     expect(ids).not.toContain("antigravity/claude-opus-4-8-thinking");
     expect(ids).not.toContain("antigravity/gpt-5.5");
     expect(ids).not.toContain("antigravity/gemini-3-pro-high");
-    expect(ids).not.toContain("antigravity/gemini-3-pro-low");
-    expect(ids).not.toContain("antigravity/gemini-3-pro");
-    // gemini-3.1-pro-high is served by discovery but 400s on streamGenerateContent.
-    expect(ids).not.toContain("antigravity/gemini-3.1-pro-high");
 
     // Every id carries the provider prefix exactly once.
     for (const id of ids) expect(id.startsWith("antigravity/")).toBe(true);
