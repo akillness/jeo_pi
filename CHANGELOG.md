@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0](https://github.com/akillness/jeo-pi/compare/v1.7.0...v1.8.0) (2026-06-29)
+
+### Features
+
+* **agentic-harness:** add done self-check verification gate to executor ([2789a96](https://github.com/akillness/jeo-pi/commit/2789a96af5e1dc076aceb73215b518d3ea22f778))
+
 ## [1.7.0](https://github.com/akillness/jeo-pi/compare/v1.6.0...v1.7.0) (2026-06-29)
 
 ### Features
