@@ -144,3 +144,27 @@ describe("spec-blueprint skill docs reflected from jeo-code ralplan", () => {
     expect(src).toContain("do not weaken the acceptance criteria");
   });
 });
+
+describe("spec-execute skill docs reflected from jeo-code team", () => {
+  it("documents the per-task executor loop with verify-before-advance", () => {
+    const src = readSkill("spec-execute");
+
+    expect(src).toContain("name: spec-execute");
+    expect(src).toMatch(/description:.*team/i);
+
+    // The defining team invariants must be present.
+    expect(src).toContain("bounded subgoal");
+    expect(src).toMatch(/verify one before starting the next/i);
+    expect(src).toContain("feed the facts");
+    expect(src).toMatch(/no blind retries/i);
+
+    // It consumes a blueprint and uses the executor's output contract.
+    expect(src).toContain("spec-blueprint");
+    expect(src).toContain("Changed Files:");
+    expect(src).toContain("Open Risks:");
+
+    // Same verify-before-done invariant as the rest of the spec-* family.
+    expect(src).toContain("do not weaken the acceptance criteria");
+  });
+});
+

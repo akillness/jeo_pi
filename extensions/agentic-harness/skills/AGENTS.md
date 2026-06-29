@@ -16,6 +16,7 @@ ralplan → team → ultragoal, and deep-dive) into jeo_pi's native
 | `spec-stack/` | Spec-first Interview → Seed → Execute → Evaluate → Evolve loop |
 | `spec-deep-dive/` | Two-stage trace → inject → clarify pipeline for unknown root causes |
 | `spec-blueprint/` | Planner/Architect/Critic blueprint that preserves contested decisions |
+| `spec-execute/` | Per-task executor loop driving blueprint tasks one bounded subgoal at a time |
 | `agentic-clarification/` | Socratic ambiguity loop producing a Goal Contract |
 | `agentic-goal/` | Primary durable `/goal` execution workflow with verifier PASS gate |
 | `agentic-systematic-debugging/` | Reproduce-first, root-cause-first debugging gates |
