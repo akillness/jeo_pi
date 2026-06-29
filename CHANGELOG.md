@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0](https://github.com/akillness/jeo_pi/compare/v1.1.0...v1.2.0) (2026-06-29)
+
+### Features
+
+* **agentic-harness:** reflect jeo-code ralplan as spec-blueprint skill ([f27bf65](https://github.com/akillness/jeo_pi/commit/f27bf65d0a9f256c001a7bc3ec44f9a7a77d4a72))
+
+### Documentation
+
+* **agentic-harness:** add agents/ and skills/ AGENTS.md registries with sync tests ([2b2eb11](https://github.com/akillness/jeo_pi/commit/2b2eb11657b07c1840361e45fc8b0d56eeb668c3))
+* **agentic-harness:** add module-level AGENTS.md index and tree-integrity test ([6d71afd](https://github.com/akillness/jeo_pi/commit/6d71afd690002cb1b7431dbf5742c8f84b068a4a))
+* **jeo-pi:** sync spec-stack docs + README with spec-deep-dive and AGENTS.md tree ([fcb0fe6](https://github.com/akillness/jeo_pi/commit/fcb0fe6ca2a0ccbf881b9b1c636daa0aaf8d2268))
+
 ## [1.1.0](https://github.com/akillness/jeo_pi/compare/v1.0.0...v1.1.0) (2026-06-29)
 
 ### Features
