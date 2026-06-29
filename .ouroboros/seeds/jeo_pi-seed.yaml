@@ -41,3 +41,5 @@ evolution_log:
     note: "Release workflow lockfile sync (npm ci) + GitHub Pages enablement (commit 346db74)."
   - rev: 6
     note: "Reflect jeo-code deep-dive as spec-deep-dive skill (trace -> inject -> clarify) + docs test. Verified vitest extensions = 805 pass."
+  - rev: 7
+    note: "Add agents/ + skills/ AGENTS.md registries (reflected from jeo-code doc pattern) with sync tests. Verified vitest extensions = 809 pass."
