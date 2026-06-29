@@ -168,3 +168,29 @@ describe("spec-execute skill docs reflected from jeo-code team", () => {
   });
 });
 
+describe("spec-verify skill docs reflected from jeo-code ultragoal", () => {
+  it("documents evidence-backed acceptance verification and the report", () => {
+    const src = readSkill("spec-verify");
+
+    expect(src).toContain("name: spec-verify");
+    expect(src).toMatch(/description:.*ultragoal/i);
+
+    // It verifies the frozen seed's acceptance criteria, with evidence.
+    expect(src).toContain("acceptance_criteria");
+    expect(src).toContain(".ouroboros/seeds/");
+    expect(src).toMatch(/only when backed by evidence/i);
+    expect(src).toMatch(/drift/i);
+
+    // PASS / NOT PASS gate and a completion report.
+    expect(src).toContain("PASS");
+    expect(src).toContain("NOT PASS");
+    expect(src).toMatch(/completion report/i);
+
+    // Consumes the execute stage and bars goal substitution.
+    expect(src).toContain("spec-execute");
+    expect(src).toMatch(/No goal substitution/i);
+
+    // Same verify-before-done invariant as the rest of the spec-* family.
+    expect(src).toContain("do not weaken the acceptance criteria");
+  });
+});

@@ -50,3 +50,5 @@ evolution_log:
   - rev: 10
     note: "Reflect jeo-code ralplan as spec-blueprint skill (parallel Planner/Architect/Critic critique -> merge preserving dissent -> handoff) + docs test + skills/AGENTS.md entry. Verified vitest extensions = 813 pass."  - rev: 11
     note: "Reflect jeo-code team as spec-execute skill (per-task executor loop: decompose -> execute -> verify-before-advance -> feed failures forward) + docs test + skills/AGENTS.md entry. Verified vitest extensions = 814 pass."
+  - rev: 12
+    note: "Reflect jeo-code ultragoal as spec-verify skill (load frozen acceptance_criteria -> check each with evidence -> PASS/NOT PASS gate + completion report + drift measure) + docs test + skills/AGENTS.md entry. Verified vitest extensions = 815 pass."
