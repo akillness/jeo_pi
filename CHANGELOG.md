@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.20.1](https://github.com/akillness/jeo-pi/compare/v1.20.0...v1.20.1) (2026-06-29)
+
+### Bug Fixes
+
+* make antigravity claude work in pi ([6dc503c](https://github.com/akillness/jeo-pi/commit/6dc503c0c1a37673c9c71738ae152a231140c078))
+
+### Documentation
+
+* **readme:** bump pinned-install example to current release v1.19.0 ([f88c694](https://github.com/akillness/jeo-pi/commit/f88c6941c3780444bf768f9375c7d8f42b1541c5))
+
 ## [1.20.0](https://github.com/akillness/jeo-pi/compare/v1.19.0...v1.20.0) (2026-06-29)
 
 ### Features
