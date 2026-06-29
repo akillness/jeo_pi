@@ -5,9 +5,10 @@
 ## Purpose
 
 Bundled workflow skills offering specialized, multi-step procedures. The
-`spec-*` family reflects jeo-code's Ouroboros workflow (deep-interview →
-ralplan → team → ultragoal, and deep-dive) into jeo_pi's native
-`/clarify` → `/goal` → subagent → verifier runtime.
+`spec-*` family reflects the full jeo-code Ouroboros workflow (deep-interview →
+deep-dive → ralplan → team → ultragoal) into jeo_pi's native `/clarify` →
+`/goal` → subagent → verifier runtime as the five skills `spec-stack`,
+`spec-deep-dive`, `spec-blueprint`, `spec-execute`, and `spec-verify`.
 
 ## Subdirectories
 
@@ -39,8 +40,8 @@ ralplan → team → ultragoal, and deep-dive) into jeo_pi's native
 
 - `tests/skill-docs.test.ts` asserts skill content invariants and that legacy
   skill names are absent from the discovery surface.
-- `tests/spec-stack-docs.test.ts` covers the `spec-stack` and `spec-deep-dive`
-  skill contracts.
+- `tests/spec-stack-docs.test.ts` covers the `spec-stack`, `spec-deep-dive`,
+  `spec-blueprint`, `spec-execute`, and `spec-verify` skill contracts.
 - `tests/skills-registry.test.ts` keeps this table in sync with the directory.
 
 ## Dependencies

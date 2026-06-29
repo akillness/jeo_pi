@@ -8,17 +8,19 @@ of bolting on a parallel framework.
 
 | jeo-code (spec-stack) | jeo_pi (this repo) |
 |-----------------------|--------------------|
-| `deep-interview` (ambiguity gate ≤ 0.2) | `/clarify` runtime → Goal Contract |
+| `deep-interview` (ambiguity gate ≤ 0.2, `--auto`) | `/clarify` runtime + `spec-stack` Interview (incl. `--auto` non-interactive gate) → Goal Contract |
 | Frozen `seed.yaml` | `.ouroboros/seeds/*.yaml` (immutable) |
-| `ralplan` (planner/architect/critic) | read-only role agents in `agents/` |
-| `team` / executor | `team` tool + `executor` agent (write) |
-| `ultragoal` (verify) | `/goal` runtime + verifier subagent (PASS gate) |
 | `deep-dive` (trace → clarify) | `spec-deep-dive` skill (3-lane trace → 3-point injection → `/clarify`) |
+| `ralplan` (planner/architect/critic) | `spec-blueprint` skill + read-only role agents in `agents/` |
+| `team` / executor | `spec-execute` skill + `team` tool + `executor` agent (write) |
+| `ultragoal` (verify) | `spec-verify` skill + `/goal` runtime + verifier subagent (PASS gate) |
 
-The two reflected workflow skills live under
-`extensions/agentic-harness/skills/`: `spec-stack` (the full loop) and
-`spec-deep-dive` (root-cause investigation before requirements, for defects with
-an unknown cause).
+The full jeo-code workflow is reflected as a five-skill `spec-*` family under
+`extensions/agentic-harness/skills/`: `spec-stack` (the end-to-end loop and
+ambiguity gate), `spec-deep-dive` (root-cause investigation before requirements,
+for defects with an unknown cause), `spec-blueprint` (Planner/Architect/Critic
+planning that preserves contested decisions), `spec-execute` (per-task executor
+loop), and `spec-verify` (evidence-backed acceptance-criteria verification).
 
 ## The loop
 

@@ -28,9 +28,11 @@
 
 > **jeo_pi** is a fork of [tmdgusya/roach-pi](https://github.com/tmdgusya/roach-pi) (MIT), evolving toward
 > [jeo-code](https://github.com/akillness/jeo-code)'s spec-first workflow and agent system prompts.
-> The upstream README below documents the bundled extension suite; jeo_pi adds the **spec-stack** and
-> **spec-deep-dive** skills (`extensions/agentic-harness/skills/`) and the planner/architect/critic/executor
-> role agents, driven by an immutable Ouroboros seed in `.ouroboros/seeds/`. See [`docs/jeo-pi/spec-stack.md`](docs/jeo-pi/spec-stack.md).
+> The upstream README below documents the bundled extension suite; jeo_pi adds the **`spec-*` skill family**
+> (`spec-stack`, `spec-deep-dive`, `spec-blueprint`, `spec-execute`, `spec-verify` under
+> `extensions/agentic-harness/skills/`) reflecting jeo-code's deep-interview → deep-dive → ralplan → team →
+> ultragoal workflow, plus the planner/architect/critic/executor role agents, driven by an immutable Ouroboros
+> seed in `.ouroboros/seeds/`. See [`docs/jeo-pi/spec-stack.md`](docs/jeo-pi/spec-stack.md).
 
 ## Table of Contents
 
