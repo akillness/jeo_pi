@@ -38,9 +38,28 @@ describe("registerAnthropicProvider config", () => {
     expect(typeof config.oauth.getApiKey).toBe("function");
   });
 
-  it("declares no models so pi's built-in Claude catalogue is preserved", () => {
+  it("declares an up-to-date Claude catalogue pinned to the OAuth transport", () => {
     const config = captureConfig();
-    expect(config.models).toBeUndefined();
+    expect(config.baseUrl).toBe("https://api.anthropic.com");
+    expect(Array.isArray(config.models)).toBe(true);
+    const ids = config.models.map((m: any) => m.id);
+    // Current direct-API ids (jeo-code parity) — the picker is no longer stale.
+    expect(ids).toContain("claude-opus-4-8");
+    expect(ids).toContain("claude-opus-4-6");
+    expect(ids).toContain("claude-sonnet-4-5-20250929");
+    expect(ids).toContain("claude-haiku-4-5-20251001");
+    // Every Claude model routes through OUR anthropic-messages transport — the
+    // Claude Code identity shape that avoids the 400 third-party rejection.
+    for (const m of config.models) {
+      expect(m.api).toBe(ANTHROPIC_API);
+      expect(m.contextWindow).toBe(200_000);
+      expect(m.input).toEqual(["text", "image"]);
+    }
+    // opus 4.x advertise extended thinking; legacy 3.5 sonnet does not.
+    const opus48 = config.models.find((m: any) => m.id === "claude-opus-4-8");
+    expect(opus48.reasoning).toBe(true);
+    const legacy = config.models.find((m: any) => m.id === "claude-3-5-sonnet-20241022");
+    expect(legacy.reasoning).toBe(false);
   });
 });
 

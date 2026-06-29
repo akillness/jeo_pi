@@ -58,8 +58,9 @@ describe("providerAuthExtension wiring", () => {
     expect(typeof claude!.config.oauth.login).toBe("function");
     expect(claude!.config.api).toBe("anthropic-messages");
     expect(typeof claude!.config.streamSimple).toBe("function");
-    // No models declared → pi's built-in Claude catalogue is preserved.
-    expect(claude!.config.models).toBeUndefined();
+    // An up-to-date Claude catalogue is declared (full replacement of pi's stale built-in list).
+    expect(Array.isArray(claude!.config.models)).toBe(true);
+    expect(claude!.config.models.map((m: any) => m.id)).toContain("claude-opus-4-8");
   });
 
 
