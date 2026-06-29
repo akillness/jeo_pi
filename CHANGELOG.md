@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.18.1](https://github.com/akillness/jeo-pi/compare/v1.18.0...v1.18.1) (2026-06-29)
+
+### Bug Fixes
+
+* **antigravity:** send Gemini tool schemas as parametersJsonSchema (fix HTTP 400 const) ([4d2f8a4](https://github.com/akillness/jeo-pi/commit/4d2f8a485869a0a1cc61574e1a3229a02abdc3b1))
+
 ## [1.18.0](https://github.com/akillness/jeo-pi/compare/v1.17.0...v1.18.0) (2026-06-29)
 
 ### Features
