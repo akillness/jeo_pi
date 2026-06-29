@@ -114,8 +114,26 @@ Eight bundled extensions cooperate around the agentic-harness core:
 
 ## Installation
 
+jeo_pi installs and runs as a **standalone pi package** — you do **not** need to clone, install, or
+configure [roach-pi](https://github.com/tmdgusya/roach-pi). jeo_pi began as a fork but ships its own
+bundled extensions, agents, skills, **JEO PI** banner, and `/setup` flow.
+
+**Prerequisites:** the [`pi`](https://github.com/badlogic/pi-mono) coding agent (`0.72.x`), plus
+Node.js `>= 22` or Bun `>= 1.3` if you build from source.
+
+### Install from GitHub (recommended)
+
 ```bash
 pi install git:github.com/akillness/jeo-pi
+```
+
+### Install from source
+
+```bash
+git clone https://github.com/akillness/jeo-pi.git
+cd jeo-pi
+npm install          # or: bun install
+pi install .         # register this checkout as a local pi package
 ```
 
 Restart `pi`, then run setup once:
@@ -124,7 +142,9 @@ Restart `pi`, then run setup once:
 /setup
 ```
 
-`/setup` writes `quietStartup: true` to `~/.pi/agent/settings.json` so jeo_pi can own the startup banner instead of duplicating pi's default extension listing.
+`/setup` writes `quietStartup: true` to `~/.pi/agent/settings.json` so jeo_pi can own the **JEO PI**
+startup banner instead of duplicating pi's default extension listing. It can also offer to star
+[`akillness/jeo-pi`](https://github.com/akillness/jeo-pi) — never roach-pi.
 
 > [!WARNING]
 > If you have the `superpowers` skill installed, remove it before using jeo_pi. It can define skill names that collide with jeo_pi's bundled `spec-*` and `agentic-*` skills, and pi does not guarantee extension override order for duplicate skills.
