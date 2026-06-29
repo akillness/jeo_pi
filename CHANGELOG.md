@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0](https://github.com/akillness/jeo-pi/compare/v1.8.0...v1.9.0) (2026-06-29)
+
+### Features
+
+* **agentic-harness:** add running-task-state invariant to spec-execute ([e73aa39](https://github.com/akillness/jeo-pi/commit/e73aa39b3dace436809c44bb300ab92f3de9be8b))
+
+### Miscellaneous
+
+* **gitignore:** ignore all dot-dirs (.omx, .ouroboros, …) at every level ([a74c56a](https://github.com/akillness/jeo-pi/commit/a74c56a5c0a12d1d24bed8cca2d057dcf7785968))
+
 ## [1.8.0](https://github.com/akillness/jeo-pi/compare/v1.7.0...v1.8.0) (2026-06-29)
 
 ### Features
