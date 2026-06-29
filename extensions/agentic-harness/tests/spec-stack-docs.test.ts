@@ -111,3 +111,36 @@ describe("spec-deep-dive skill docs reflected from jeo-code", () => {
     expect(src).toContain("do not weaken the acceptance criteria");
   });
 });
+
+describe("spec-blueprint skill docs reflected from jeo-code ralplan", () => {
+  it("documents the parallel critique → merge → handoff stages", () => {
+    const src = readSkill("spec-blueprint");
+
+    expect(src).toContain("name: spec-blueprint");
+    expect(src).toMatch(/description:.*ralplan/i);
+
+    // Stages must appear in order: critique, then merge, then handoff.
+    const critiqueIdx = src.indexOf("Stage 1 — Parallel critique");
+    const mergeIdx = src.indexOf("Stage 2 — Merge");
+    const handoffIdx = src.indexOf("Stage 3 — Handoff");
+    expect(critiqueIdx).toBeGreaterThan(-1);
+    expect(mergeIdx).toBeGreaterThan(critiqueIdx);
+    expect(handoffIdx).toBeGreaterThan(mergeIdx);
+
+    // All three planning roles must drive the critique lanes.
+    for (const role of ["Planner", "Architect", "Critic"]) {
+      expect(src).toContain(role);
+    }
+
+    // The defining ralplan invariant: disagreements are preserved, not collapsed.
+    expect(src).toContain("do not collapse the split to");
+    expect(src).toMatch(/human judgment call/i);
+
+    // It must sit after clarification/deep-dive and feed execution, not replace them.
+    expect(src).toContain("spec-stack");
+    expect(src).toContain("spec-deep-dive");
+
+    // Same verify-before-done invariant as the rest of the spec-* family.
+    expect(src).toContain("do not weaken the acceptance criteria");
+  });
+});
