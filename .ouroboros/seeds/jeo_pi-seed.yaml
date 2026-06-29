@@ -1,0 +1,35 @@
+# Ouroboros seed — frozen spec for the jeo_pi development effort.
+# Immutable once frozen. New decisions create a new revision; do not edit in place.
+id: jeo_pi-001
+created: 2026-06-29
+goal: >
+  Stand up jeo_pi as a working fork of tmdgusya/roach-pi (a pi-coding-agent
+  extension suite), then evolve it by reflecting jeo-code's spec-stack
+  workflow and agent system prompts into the agentic-harness extension.
+
+constraints:
+  - "Preserve upstream MIT license and attribution to tmdgusya/roach-pi."
+  - "TypeScript + Bun; tests run via vitest (vitest run extensions/)."
+  - "Do not break the existing 801 extension tests."
+  - "Reflect jeo-code workflows/prompts into jeo_pi's native structure (agents/, skills/) — do not bolt on a parallel framework."
+  - "pi-core-changes/ tests require the upstream pi-mono src tree and are out of scope for standalone CI."
+
+acceptance_criteria:
+  - "Upstream roach-pi extension suite copied and installs (bun install) cleanly."
+  - "npm/bun run test green: 801/801 extension tests pass via vitest."
+  - "Package identity rebranded to jeo_pi (name, author, description)."
+  - "jeo-code role prompts (planner, architect, critic, executor) present as jeo_pi agents with valid frontmatter."
+  - "spec-stack skill documents the Interview→Seed→Execute→Evaluate→Evolve loop and passes a docs test."
+  - "Knowledge filed in llm-wiki and an obsidian second-brain note."
+  - "Each verified increment committed; baseline + increments pushed to akillness/jeo_pi."
+
+verification:
+  - "bun run test  → 81 files / 801 tests passed"
+  - "vitest run extensions/agentic-harness/tests/spec-stack-docs.test.ts → green"
+  - "git log shows incremental conventional commits; git push succeeds"
+
+evolution_log:
+  - rev: 1
+    note: "Baseline import + rebrand + runnable test scripts (commit 78ff92e)."
+  - rev: 2
+    note: "Reflect jeo-code spec-stack: planner/architect/critic/executor agents + spec-stack skill + seed."
