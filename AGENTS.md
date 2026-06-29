@@ -53,7 +53,7 @@ These flags are opt-in and should remain off in normal usage.
 
 If `pi` aborts at startup with many `Tool "…" conflicts with …` / `Flag "…"
 conflicts with …` lines (followed by `Hint: Start without extensions using "pi
--ne"`), the same jeo_pi extensions are registered twice — almost always a local
+-ne"`), the same jeo-pi extensions are registered twice — almost always a local
 dev checkout (`pi install .`) **and** the git package
 (`pi install git:github.com/akillness/jeo-pi`) at once. pi dedupes packages by
 canonical path (`resource-loader.mergePaths`), so it cannot tell two physical

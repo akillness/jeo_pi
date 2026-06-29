@@ -1,11 +1,11 @@
 ---
 name: spec-stack
-description: Spec-first Ouroboros development loop for jeo_pi. Use when a vague request needs a Socratic interview, an immutable seed/spec before coding, a verify-before-done loop, or drift measurement against the original contract. Reflected from jeo-code's deep-interview → ralplan → team → ultragoal workflow.
+description: Spec-first Ouroboros development loop for jeo-pi. Use when a vague request needs a Socratic interview, an immutable seed/spec before coding, a verify-before-done loop, or drift measurement against the original contract. Reflected from jeo-code's deep-interview → ralplan → team → ultragoal workflow.
 ---
 
 # Spec Stack
 
-Stop prompting. Start specifying. `spec-stack` is jeo_pi's portable spec-first
+Stop prompting. Start specifying. `spec-stack` is jeo-pi's portable spec-first
 loop, adapted from jeo-code's Ouroboros workflow into this extension's
 `/clarify` → `/goal` → subagent → verifier machinery.
 

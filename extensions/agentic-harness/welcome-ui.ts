@@ -13,7 +13,7 @@ export type HeaderUi = {
 
 let welcomeVisible = true;
 
-// jeo_pi ASCII wordmark (ANSI Shadow font). Letters are kerned tight so the
+// jeo-pi ASCII wordmark (ANSI Shadow font). Letters are kerned tight so the
 // six rows read as one cohesive "JEOPI" wordmark rather than "JEO PI". Exported
 // as a single source of truth so the banner shape stays test-locked.
 export const BANNER_LINES = [
@@ -28,8 +28,8 @@ export const BANNER_LINES = [
 const WELCOME_SHIMMER_FRAME_MS = 33;
 const WELCOME_SHIMMER_PHASE_OFFSET_MS = 350;
 
-// jeo_pi landing page copy. Kept as module constants so the welcome screen is a
-// testable, single-source description of what jeo_pi is and how to drive it.
+// jeo-pi landing page copy. Kept as module constants so the welcome screen is a
+// testable, single-source description of what jeo-pi is and how to drive it.
 export const WELCOME_TAGLINE = "Engineering Discipline Extension";
 export const WELCOME_SUBTITLE =
   "Spec-driven agentic harness for pi — clarify · plan · build · verify";
@@ -38,7 +38,7 @@ export const WELCOME_WORKFLOW_STEPS: ReadonlyArray<{ command: string; blurb: str
   { command: "/clarify", blurb: "Frame the problem before any code — never skip it." },
   { command: "/goal", blurb: "Activate a durable Goal Contract with success criteria." },
   { command: "/team", blurb: "Run the planner → executor → verifier loop on the plan." },
-  { command: "/welcome", blurb: "Show or hide this jeo_pi landing page anytime." },
+  { command: "/welcome", blurb: "Show or hide this jeo-pi landing page anytime." },
 ];
 
 const ANSI_RESET = "\x1b[0m";

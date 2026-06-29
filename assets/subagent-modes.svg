@@ -1,5 +1,5 @@
 <svg width="1080" height="520" viewBox="0 0 1080 520" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
-  <title id="title">jeo_pi subagent modes</title>
+  <title id="title">jeo-pi subagent modes</title>
   <desc id="desc">Visualization of four subagent modes: single, parallel, chain, and async.</desc>
 
   <rect width="1080" height="520" rx="28" fill="#0B1020"/>

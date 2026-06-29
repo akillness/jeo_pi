@@ -5,7 +5,7 @@
 ## Purpose
 
 The `pi-agentic-harness` extension: agentic harness commands for clarification,
-durable goals, subagents, and verification. It hosts jeo_pi's spec-first
+durable goals, subagents, and verification. It hosts jeo-pi's spec-first
 workflow — the `spec-stack` (Interview → Seed → Execute → Evaluate → Evolve) and
 `spec-deep-dive` (trace → clarify) skills reflected from jeo-code — together with
 the role subagents and the durable `/goal` runtime that execute against a frozen

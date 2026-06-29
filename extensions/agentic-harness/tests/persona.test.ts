@@ -18,9 +18,9 @@ describe("forgePersona", () => {
 });
 
 describe("JEO_PI_PERSONA content", () => {
-  it("establishes the jeo_pi identity", () => {
-    expect(JEO_PI_PERSONA).toContain("jeo_pi");
-    expect(JEO_PI_PERSONA).toMatch(/## Identity: jeo_pi/);
+  it("establishes the jeo-pi identity", () => {
+    expect(JEO_PI_PERSONA).toContain("jeo-pi");
+    expect(JEO_PI_PERSONA).toMatch(/## Identity: jeo-pi/);
   });
 
   it("encodes the four-stage clarify -> plan -> build -> verify loop", () => {

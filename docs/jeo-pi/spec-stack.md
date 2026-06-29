@@ -1,12 +1,12 @@
-# jeo_pi spec-stack
+# jeo-pi spec-stack
 
-jeo_pi reflects [jeo-code](https://github.com/akillness/jeo-code)'s spec-first
+jeo-pi reflects [jeo-code](https://github.com/akillness/jeo-code)'s spec-first
 **Ouroboros** workflow into roach-pi's native agentic-harness machinery, instead
 of bolting on a parallel framework.
 
 ## Mapping
 
-| jeo-code (spec-stack) | jeo_pi (this repo) |
+| jeo-code (spec-stack) | jeo-pi (this repo) |
 |-----------------------|--------------------|
 | `deep-interview` (ambiguity gate ≤ 0.2, `--auto`) | `/clarify` runtime + `spec-stack` Interview (incl. `--auto` non-interactive gate) → Goal Contract |
 | Frozen `seed.yaml` | `.ouroboros/seeds/*.yaml` (immutable) |

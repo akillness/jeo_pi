@@ -1,11 +1,11 @@
 ---
 name: spec-verify
-description: Final acceptance-criteria verification and completion report for jeo_pi. Use when tasks are implemented and you need a high-level check that the frozen seed's acceptance criteria are actually met, with evidence. Reflected from jeo-code's ultragoal workflow — a criterion is PASS only with evidence, never by assertion.
+description: Final acceptance-criteria verification and completion report for jeo-pi. Use when tasks are implemented and you need a high-level check that the frozen seed's acceptance criteria are actually met, with evidence. Reflected from jeo-code's ultragoal workflow — a criterion is PASS only with evidence, never by assertion.
 ---
 
 # Spec Verify
 
-Implemented is not the same as done. `spec-verify` is jeo_pi's final stage,
+Implemented is not the same as done. `spec-verify` is jeo-pi's final stage,
 adapted from jeo-code's `ultragoal` workflow: it checks the implemented change
 set against the **acceptance criteria frozen in the seed**, runs the checks, and
 writes a completion report with the verification evidence.

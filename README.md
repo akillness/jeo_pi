@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="assets/hero.svg" alt="jeo_pi — engineering discipline + spec-first agentic harness for pi" width="100%">
+  <img src="assets/hero.svg" alt="jeo-pi — engineering discipline + spec-first agentic harness for pi" width="100%">
 </p>
 
 <p align="center">
-  <img src="assets/jeo-pi-mascot.png" alt="jeo_pi mascot" width="260">
+  <img src="assets/jeo-pi-mascot.png" alt="jeo-pi mascot" width="260">
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 ---
 
-> **jeo_pi** is an engineering-discipline extension suite for the **pi** coding agent. It began as a fork of
+> **jeo-pi** is an engineering-discipline extension suite for the **pi** coding agent. It began as a fork of
 > [tmdgusya/roach-pi](https://github.com/tmdgusya/roach-pi) (MIT) and now reflects
 > [jeo-code](https://github.com/akillness/jeo-code)'s spec-first **Ouroboros** workflow —
 > _deep-interview → deep-dive → ralplan → team → ultragoal_ — directly into pi's native extension
@@ -34,7 +34,7 @@
 
 ## Table of Contents
 
-- [What is jeo_pi?](#what-is-jeo_pi)
+- [What is jeo-pi?](#what-is-jeo-pi)
 - [The spec-first loop](#the-spec-first-loop)
 - [Eight extensions, one loop](#eight-extensions-one-loop)
 - [Installation](#installation)
@@ -60,9 +60,9 @@
 
 ---
 
-## What is _jeo_pi_?
+## What is _jeo-pi_?
 
-jeo_pi turns an ordinary pi session into a disciplined engineering loop: ambiguity is forced into the open
+jeo-pi turns an ordinary pi session into a disciplined engineering loop: ambiguity is forced into the open
 before code is written, plans are reviewed by adversarial role agents, execution is delegated to bounded
 subagents, and **completion is gated by a verifier** — a target cannot be marked done until the verifier
 returns `PASS`.
@@ -74,11 +74,11 @@ in this repository. Nothing is hidden behind an opaque service.
 
 ## The spec-first loop
 
-jeo_pi reflects jeo-code's **Ouroboros** workflow into roach-pi's agentic-harness rather than reimplementing it.
+jeo-pi reflects jeo-code's **Ouroboros** workflow into roach-pi's agentic-harness rather than reimplementing it.
 The contract is frozen as an **immutable seed**, executed against, evaluated honestly, and re-seeded when reality drifts.
 
 <p align="center">
-  <img src="assets/spec-loop.svg" alt="jeo_pi spec-first loop: Interview, Seed, Execute, Evaluate, Evolve" width="90%">
+  <img src="assets/spec-loop.svg" alt="jeo-pi spec-first loop: Interview, Seed, Execute, Evaluate, Evolve" width="90%">
 </p>
 
 | Stage | What happens | Driven by |
@@ -96,7 +96,7 @@ The contract is frozen as an **immutable seed**, executed against, evaluated hon
 Eight bundled extensions cooperate around the agentic-harness core:
 
 <p align="center">
-  <img src="assets/architecture-overview.svg" alt="jeo_pi extension architecture overview" width="90%">
+  <img src="assets/architecture-overview.svg" alt="jeo-pi extension architecture overview" width="90%">
 </p>
 
 | Extension | Responsibility |
@@ -114,14 +114,14 @@ Eight bundled extensions cooperate around the agentic-harness core:
 
 ## Installation
 
-jeo_pi is a **pi package** layered on top of the [`pi`](https://pi.dev) coding agent — now maintained
+jeo-pi is a **pi package** layered on top of the [`pi`](https://pi.dev) coding agent — now maintained
 at [earendil-works/pi](https://github.com/earendil-works/pi) and published to npm as
 [`@earendil-works/pi-coding-agent`](https://www.npmjs.com/package/@earendil-works/pi-coding-agent).
 You do **not** need to clone, install, or configure
-[roach-pi](https://github.com/tmdgusya/roach-pi): jeo_pi began as a fork but ships its own bundled
+[roach-pi](https://github.com/tmdgusya/roach-pi): jeo-pi began as a fork but ships its own bundled
 extensions, agents, skills, **JEO PI** banner, and `/setup` flow.
 
-**Prerequisites:** Node.js `>= 22.19.0` (or Bun `>= 1.3` to build jeo_pi from source) and a terminal.
+**Prerequisites:** Node.js `>= 22.19.0` (or Bun `>= 1.3` to build jeo-pi from source) and a terminal.
 
 ### 1. Install pi
 
@@ -161,7 +161,7 @@ pi
 > logo with a success / error state) instead of a raw redirect, then hands the
 > token back to the terminal. Both subscription providers share the same page.
 
-### 3. Install jeo_pi
+### 3. Install jeo-pi
 
 ```bash
 # From GitHub (recommended)
@@ -207,20 +207,20 @@ Restart `pi`, then:
 /setup
 ```
 
-`/setup` writes `quietStartup: true` to `~/.pi/agent/settings.json` so jeo_pi can own the **JEO PI**
+`/setup` writes `quietStartup: true` to `~/.pi/agent/settings.json` so jeo-pi can own the **JEO PI**
 startup banner instead of duplicating pi's default extension listing. It can also offer to star
 [`akillness/jeo-pi`](https://github.com/akillness/jeo-pi) — never roach-pi.
 
 ### Update / remove
 
 ```bash
-pi update git:github.com/akillness/jeo-pi   # update jeo_pi to the latest commit
+pi update git:github.com/akillness/jeo-pi   # update jeo-pi to the latest commit
 pi update --all                             # update pi and every installed package
-pi remove git:github.com/akillness/jeo-pi   # uninstall jeo_pi
+pi remove git:github.com/akillness/jeo-pi   # uninstall jeo-pi
 ```
 
 > [!WARNING]
-> If you have the `superpowers` skill installed, remove it before using jeo_pi. It can define skill names that collide with jeo_pi's bundled `spec-*` and `agentic-*` skills, and pi does not guarantee extension override order for duplicate skills.
+> If you have the `superpowers` skill installed, remove it before using jeo-pi. It can define skill names that collide with jeo-pi's bundled `spec-*` and `agentic-*` skills, and pi does not guarantee extension override order for duplicate skills.
 
 ---
 
@@ -258,7 +258,7 @@ Quick system checks:
 
 ## The `spec-*` skill family
 
-jeo_pi ships jeo-code's full spec-first workflow as a five-skill family under `extensions/agentic-harness/skills/`:
+jeo-pi ships jeo-code's full spec-first workflow as a five-skill family under `extensions/agentic-harness/skills/`:
 
 | Skill | Reflects (jeo-code) | Purpose |
 |---|---|---|
@@ -297,7 +297,7 @@ Vague requests should not become vague code.
 The `subagent` tool delegates work to specialized agents running as separate `pi` processes.
 
 <p align="center">
-  <img src="assets/subagent-modes.svg" alt="jeo_pi subagent modes: single, parallel, chain, async" width="88%">
+  <img src="assets/subagent-modes.svg" alt="jeo-pi subagent modes: single, parallel, chain, async" width="88%">
 </p>
 
 | Mode | Use it for |
@@ -326,7 +326,7 @@ Async subagents support `asyncDependency: "needed-before-final"` when the lead a
 The bundled FFF extension upgrades pi's file and content search with git-aware ranking and frecency.
 
 <p align="center">
-  <img src="assets/fff-search-preview.svg" alt="jeo_pi FFF search: find, grep, multi_grep, @ autocomplete" width="88%">
+  <img src="assets/fff-search-preview.svg" alt="jeo-pi FFF search: find, grep, multi_grep, @ autocomplete" width="88%">
 </p>
 
 - **`find`** — fuzzy file-name search with frecency and git-aware ranking
@@ -387,7 +387,7 @@ Configuration reads standard MCP files automatically: `~/.config/mcp/mcp.json`, 
 ## Memory that _recalls_.
 
 <p align="center">
-  <img src="assets/lsp-memory-preview.svg" alt="jeo_pi LSP tools and workspace memory save/recall flow" width="88%">
+  <img src="assets/lsp-memory-preview.svg" alt="jeo-pi LSP tools and workspace memory save/recall flow" width="88%">
 </p>
 
 Workspace memory stores important findings as structured records under pi's agent directory, scoped by workspace. It recalls relevant records into future sessions automatically.
@@ -623,10 +623,10 @@ npm --prefix extensions/agentic-harness run build
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). For larger changes, prefer the same discipline jeo_pi enforces: clarify the goal, freeze a seed, write a plan, implement in small steps, and verify with tests or a focused manual check before claiming done.
+See [CONTRIBUTING.md](CONTRIBUTING.md). For larger changes, prefer the same discipline jeo-pi enforces: clarify the goal, freeze a seed, write a plan, implement in small steps, and verify with tests or a focused manual check before claiming done.
 
 ---
 
 ## License
 
-MIT — see [package.json](package.json). jeo_pi is a fork of [roach-pi](https://github.com/tmdgusya/roach-pi) (MIT) and reflects workflows from [jeo-code](https://github.com/akillness/jeo-code).
+MIT — see [package.json](package.json). jeo-pi is a fork of [roach-pi](https://github.com/tmdgusya/roach-pi) (MIT) and reflects workflows from [jeo-code](https://github.com/akillness/jeo-code).

@@ -6,7 +6,7 @@
 
 Bundled workflow skills offering specialized, multi-step procedures. The
 `spec-*` family reflects the full jeo-code Ouroboros workflow (deep-interview →
-deep-dive → ralplan → team → ultragoal) into jeo_pi's native `/clarify` →
+deep-dive → ralplan → team → ultragoal) into jeo-pi's native `/clarify` →
 `/goal` → subagent → verifier runtime as the five skills `spec-stack`,
 `spec-deep-dive`, `spec-blueprint`, `spec-execute`, and `spec-verify`.
 

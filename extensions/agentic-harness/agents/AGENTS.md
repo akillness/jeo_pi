@@ -4,9 +4,9 @@
 
 ## Purpose
 
-Role-specific system prompts defining jeo_pi subagent behavior. The four
+Role-specific system prompts defining jeo-pi subagent behavior. The four
 spec-stack roles (planner, architect, critic, executor) are reflected from
-jeo-code; the remaining agents are jeo_pi-native execution and review roles.
+jeo-code; the remaining agents are jeo-pi-native execution and review roles.
 
 ## Key Files
 

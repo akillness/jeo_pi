@@ -1,12 +1,12 @@
 ---
 name: spec-deep-dive
-description: Two-stage trace → clarify pipeline for jeo_pi. Use when a bug or problem has an unknown root cause and you must investigate WHY before defining WHAT to do. Runs parallel causal investigation, then injects the findings into the clarification loop. Reflected from jeo-code's deep-dive workflow.
+description: Two-stage trace → clarify pipeline for jeo-pi. Use when a bug or problem has an unknown root cause and you must investigate WHY before defining WHAT to do. Runs parallel causal investigation, then injects the findings into the clarification loop. Reflected from jeo-code's deep-dive workflow.
 ---
 
 # Spec Deep Dive
 
 When you have a problem but not a root cause, do not jump to a Goal Contract on
-guesses. `spec-deep-dive` is jeo_pi's two-stage pipeline, adapted from
+guesses. `spec-deep-dive` is jeo-pi's two-stage pipeline, adapted from
 jeo-code's deep-dive workflow: first investigate WHY (trace), then define WHAT
 to do (clarify) — with the trace evidence injected into the interview so the
 clarification loop never re-explores what is already known.

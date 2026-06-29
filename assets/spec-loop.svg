@@ -1,5 +1,5 @@
 <svg width="1100" height="380" viewBox="0 0 1100 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
-  <title id="t">jeo_pi spec loop</title>
+  <title id="t">jeo-pi spec loop</title>
   <desc id="d">The Ouroboros spec-first loop: Interview, Seed, Execute, Evaluate, Evolve, with verifier-gated goal continuation.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1100" y2="380" gradientUnits="userSpaceOnUse">

@@ -1,11 +1,11 @@
 ---
 name: spec-execute
-description: Per-task executor loop for jeo_pi. Use when a blueprint exists and you must implement the concrete tasks one bounded subgoal at a time, verifying each before the next. Reflected from jeo-code's team workflow — failures feed forward into the next task instead of blind retries.
+description: Per-task executor loop for jeo-pi. Use when a blueprint exists and you must implement the concrete tasks one bounded subgoal at a time, verifying each before the next. Reflected from jeo-code's team workflow — failures feed forward into the next task instead of blind retries.
 ---
 
 # Spec Execute
 
-A blueprint is not a result. `spec-execute` is jeo_pi's execution stage, adapted
+A blueprint is not a result. `spec-execute` is jeo-pi's execution stage, adapted
 from jeo-code's `team` workflow: it drives the blueprint's tasks through a
 per-task executor loop, keeping each task isolated and verified before the next
 one starts.

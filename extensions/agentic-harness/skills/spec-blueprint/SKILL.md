@@ -1,12 +1,12 @@
 ---
 name: spec-blueprint
-description: Multi-agent Planner/Architect/Critic blueprint for jeo_pi. Use when requirements are already clear (a frozen seed or Goal Contract exists) and you need a robust execution plan with risks, tasks, and files before writing code. Reflected from jeo-code's ralplan workflow — contested decisions are preserved, not collapsed.
+description: Multi-agent Planner/Architect/Critic blueprint for jeo-pi. Use when requirements are already clear (a frozen seed or Goal Contract exists) and you need a robust execution plan with risks, tasks, and files before writing code. Reflected from jeo-code's ralplan workflow — contested decisions are preserved, not collapsed.
 ---
 
 # Spec Blueprint
 
 Once the seed is frozen (Ambiguity ≤ 0.2), do not jump straight to editing
-files. `spec-blueprint` is jeo_pi's planning stage, adapted from jeo-code's
+files. `spec-blueprint` is jeo-pi's planning stage, adapted from jeo-code's
 `ralplan` workflow: three role agents critique the seed in parallel, then their
 views are merged into one execution blueprint — **without erasing the points
 where they disagree**.

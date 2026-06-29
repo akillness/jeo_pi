@@ -89,7 +89,7 @@ describe("welcome header controller", () => {
     expect(rendered).toContain("/clarify");
   });
 
-  it("renders the jeo_pi landing page overview and core workflow", () => {
+  it("renders the jeo-pi landing page overview and core workflow", () => {
     const component = createWelcomeHeader()({} as any, theme);
     const rendered = component.render(120).join("\n");
 

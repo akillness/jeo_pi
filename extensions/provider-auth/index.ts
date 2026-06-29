@@ -1,8 +1,8 @@
 /**
- * pi-provider-auth: unified provider authentication for jeo_pi, routed entirely
+ * pi-provider-auth: unified provider authentication for jeo-pi, routed entirely
  * through pi's built-in `/login`.
  *
- * Borrows jeo-code's provider-login approach so jeo_pi authenticates and uses
+ * Borrows jeo-code's provider-login approach so jeo-pi authenticates and uses
  * Claude, Google Antigravity, and API providers without a bespoke command:
  *   - Claude:      registered here with jeo-code's Anthropic OAuth flow + Claude
  *                  Code streaming so /login → "Use a subscription" → Claude
