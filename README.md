@@ -160,6 +160,12 @@ pi
 > browser callback renders pi's own **인증 브라우저** confirmation page (the pi
 > logo with a success / error state) instead of a raw redirect, then hands the
 > token back to the terminal. Both subscription providers share the same page.
+>
+> **Antigravity Claude.** jeo-pi offers only the Antigravity Claude ids that are
+> live-routable through Cloud Code Assist: `antigravity/claude-sonnet-4-6` and
+> `antigravity/claude-opus-4-6-thinking`. These were verified with the real `pi`
+> CLI path; broader static aliases from `jeo-code` are intentionally hidden when
+> CCA returns HTTP 400/404 for them.
 
 ### 3. Install jeo-pi
 
