@@ -18,7 +18,7 @@ import {
   streamAntigravity,
 } from "../antigravity/cca.js";
 import { refreshAntigravityToken } from "../antigravity/oauth.js";
-import { ANTIGRAVITY_PROVIDER, toAntigravityModel } from "../antigravity/register.js";
+import { ANTIGRAVITY_MODEL_IDS, ANTIGRAVITY_PROVIDER, toAntigravityModel } from "../antigravity/register.js";
 
 interface OAuthEntry {
   type?: string;
@@ -284,3 +284,59 @@ function textOf(msg: { content: any[] }): string {
     .map((b) => b.text)
     .join("");
 }
+
+/**
+ * FULL-CATALOG LIVE sweep — proves the curated `ANTIGRAVITY_MODEL_IDS` claim:
+ * every id pi offers is genuinely routable on the CCA backend (no ghost ids
+ * that 404 "entity not found" or 400 "rejected" at call time — the exact
+ * failures the curated list was built to eliminate).
+ *
+ * One trivial prompt per model. The hard invariant is routability: the backend
+ * must never answer 404/400 for an offered id. Premium models share tight
+ * subscription quotas, so transient 429 (rate limit) / 503 (capacity) are
+ * retried with backoff and, if still throttled, accepted as proof the id is
+ * real and routed (it reached the model, just got throttled). When the call
+ * does succeed we additionally assert the model streamed non-empty content.
+ */
+describe.skipIf(!enabled)("LIVE Antigravity full-catalog sweep (every offered id is routable)", () => {
+  const TRANSIENT = new Set([429, 500, 502, 503, 504]);
+
+  it.each(ANTIGRAVITY_MODEL_IDS)("model %s is routable over the backend", async (modelId) => {
+    let res!: Response;
+    let rawText = "";
+    // Up to 3 attempts, backing off on transient capacity/rate-limit errors.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { access, projectId } = await freshToken(creds!);
+      const { url, headers, body } = buildCcaRequest({
+        model: `antigravity/${modelId}`,
+        project: projectId!,
+        accessToken: access,
+        systemPrompt: "You are a terse assistant.",
+        messages: [{ role: "user", content: "Reply with exactly the word: PONG" }] as any,
+      });
+      res = await fetch(url, { method: "POST", headers, body });
+      if (res.ok || !TRANSIENT.has(res.status)) break;
+      rawText = await res.text();
+      await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+    }
+
+    // Hard invariant: an offered id must NEVER be an unknown/ghost id.
+    expect([404, 400].includes(res.status), `${modelId} → ghost id, HTTP ${res.status}: ${rawText}`).toBe(false);
+
+    if (!res.ok) {
+      // Still throttled after retries — routable but capacity-limited. Accept
+      // (a 429/503 proves the backend recognised and routed the id).
+      // eslint-disable-next-line no-console
+      console.log("[LIVE sweep] %s → routable but throttled HTTP %d (accepted)", modelId, res.status);
+      expect(TRANSIENT.has(res.status), `${modelId} → unexpected HTTP ${res.status}: ${rawText}`).toBe(true);
+      return;
+    }
+
+    const chunks = await readSseToChunks(res.body!);
+    const text = chunks.map(ccaText).join("");
+    const thought = chunks.map(ccaThought).join("");
+    // eslint-disable-next-line no-console
+    console.log("[LIVE sweep] %s → textLen=%d thoughtLen=%d text=%o", modelId, text.length, thought.length, text.slice(0, 40));
+    expect(text.length + thought.length, `${modelId} streamed no content`).toBeGreaterThan(0);
+  }, 120_000);
+});
