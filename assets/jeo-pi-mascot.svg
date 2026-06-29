@@ -1,0 +1,95 @@
+<svg width="600" height="600" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
+  <title id="t">jeo_pi mascot</title>
+  <desc id="d">Super-deformed chibi robot mascot for jeo_pi — a big-headed terminal-faced bot in the cyan / violet / orange brand palette.</desc>
+  <defs>
+    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.6">
+      <stop offset="0" stop-color="#A78BFA" stop-opacity="0.35"/>
+      <stop offset="0.55" stop-color="#22D3EE" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#0B0A10" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shell" x1="150" y1="120" x2="450" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2A2A38"/>
+      <stop offset="1" stop-color="#16161F"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="150" y1="120" x2="450" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22D3EE"/>
+      <stop offset="0.5" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#F97316"/>
+    </linearGradient>
+    <linearGradient id="body" x1="210" y1="380" x2="390" y2="500" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#232330"/>
+      <stop offset="1" stop-color="#13131B"/>
+    </linearGradient>
+    <radialGradient id="eye" cx="0.4" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#D7FBFF"/>
+      <stop offset="0.45" stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#0E7490"/>
+    </radialGradient>
+    <radialGradient id="cheek" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F97316" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#F97316" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <!-- ambient glow -->
+  <rect width="600" height="600" fill="url(#glow)"/>
+
+  <!-- ground shadow -->
+  <ellipse cx="300" cy="540" rx="150" ry="24" fill="#000000" opacity="0.35" filter="url(#soft)"/>
+
+  <!-- antenna -->
+  <line x1="300" y1="118" x2="300" y2="70" stroke="#5B5B6E" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="300" cy="58" r="18" fill="#F97316"/>
+  <circle cx="300" cy="58" r="30" fill="#F97316" opacity="0.3" filter="url(#soft)"/>
+
+  <!-- tiny arms (behind body) -->
+  <g stroke="#3A3A48" stroke-width="20" stroke-linecap="round">
+    <path d="M196 430 q-42 -6 -56 -42" fill="none"/>
+    <path d="M404 430 q42 -6 56 -42" fill="none"/>
+  </g>
+  <circle cx="130" cy="380" r="17" fill="url(#rim)"/>
+  <circle cx="470" cy="380" r="17" fill="url(#rim)"/>
+
+  <!-- body -->
+  <rect x="214" y="372" width="172" height="138" rx="46" fill="url(#body)" stroke="url(#rim)" stroke-width="5"/>
+  <rect x="262" y="404" width="76" height="44" rx="12" fill="#0C0C12"/>
+  <circle cx="285" cy="426" r="7" fill="#22D3EE"/>
+  <circle cx="315" cy="426" r="7" fill="#A78BFA"/>
+
+  <!-- legs -->
+  <rect x="248" y="498" width="42" height="40" rx="18" fill="#2A2A38"/>
+  <rect x="310" y="498" width="42" height="40" rx="18" fill="#2A2A38"/>
+
+  <!-- big SD head -->
+  <rect x="150" y="120" width="300" height="252" rx="66" fill="url(#rim)"/>
+  <rect x="158" y="128" width="284" height="236" rx="60" fill="url(#shell)"/>
+
+  <!-- ear nubs -->
+  <rect x="138" y="210" width="24" height="70" rx="12" fill="url(#rim)"/>
+  <rect x="438" y="210" width="24" height="70" rx="12" fill="url(#rim)"/>
+
+  <!-- screen face -->
+  <rect x="182" y="156" width="236" height="180" rx="40" fill="#0A0A0F"/>
+  <rect x="182" y="156" width="236" height="180" rx="40" fill="none" stroke="#1E1E2A" stroke-width="3"/>
+
+  <!-- cheeks -->
+  <circle cx="222" cy="262" r="26" fill="url(#cheek)"/>
+  <circle cx="378" cy="262" r="26" fill="url(#cheek)"/>
+
+  <!-- big chibi eyes -->
+  <circle cx="252" cy="232" r="34" fill="url(#eye)"/>
+  <circle cx="348" cy="232" r="34" fill="url(#eye)"/>
+  <circle cx="241" cy="221" r="11" fill="#FFFFFF"/>
+  <circle cx="337" cy="221" r="11" fill="#FFFFFF"/>
+  <circle cx="262" cy="244" r="5" fill="#FFFFFF" opacity="0.8"/>
+  <circle cx="358" cy="244" r="5" fill="#FFFFFF" opacity="0.8"/>
+
+  <!-- happy mouth -->
+  <path d="M268 290 q32 30 64 0" fill="none" stroke="#22D3EE" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- prompt cursor -->
+  <text x="300" y="332" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="22" font-weight="700" fill="#A78BFA">&gt;_</text>
+</svg>
