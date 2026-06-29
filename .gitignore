@@ -1,11 +1,22 @@
+# Dependencies & build output
 node_modules/
-.codex
-.pi/
-.omo/
-.reasonix/
+graphify-out/
+
+# Hidden (dot) files and folders at EVERY level — runtime / tool state such as
+# .jeo, .omx, .ouroboros, .omo, .reasonix, .codex, .pi, .DS_Store …
+# A pattern with no slash matches the basename at any depth, so this covers
+# both repo-root and nested dotfiles/dirs.
+.*
+
+# …except these intentional dot-entries, which stay tracked:
+!.gitignore
+!.ignore
+!.npmrc
+!.releaserc.mjs
+!.github/
+!.github/**
+
+# Scratch / generated
 artifacts/
 comic/
 nul
-.jeo/
-graphify-out/
-.DS_Store
