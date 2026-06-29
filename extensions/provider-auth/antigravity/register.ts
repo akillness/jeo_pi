@@ -6,7 +6,7 @@
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import type { AssistantMessageEventStream, Context, Model } from "@mariozechner/pi-ai";
+import type { AssistantMessageEventStream, Context, Model, SimpleStreamOptions } from "@mariozechner/pi-ai";
 import { ANTIGRAVITY_DAILY_ENDPOINT, streamAntigravity } from "./cca.js";
 import { getAntigravityApiKey, loginAntigravity, refreshAntigravityToken } from "./oauth.js";
 
@@ -94,8 +94,14 @@ export function registerAntigravityProvider(pi: ExtensionAPI): void {
     // required when defining models" rule and is overridden at request time.
     apiKey: "antigravity-oauth",
     models: ANTIGRAVITY_MODELS,
-    streamSimple: (model: Model<any>, context: Context, options?: { apiKey?: string; temperature?: number; maxTokens?: number; signal?: AbortSignal }): AssistantMessageEventStream =>
-      streamAntigravity(model as Model<"google-generative-ai">, context, options),
+    streamSimple: (model: Model<any>, context: Context, options?: SimpleStreamOptions): AssistantMessageEventStream =>
+      streamAntigravity(model as Model<"google-generative-ai">, context, {
+        apiKey: options?.apiKey,
+        temperature: options?.temperature,
+        maxTokens: options?.maxTokens,
+        reasoning: options?.reasoning,
+        signal: options?.signal,
+      }),
     oauth: {
       name: "Google Antigravity (Cloud Code Assist agent)",
       login: loginAntigravity,

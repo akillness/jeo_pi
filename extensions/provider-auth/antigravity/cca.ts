@@ -12,7 +12,7 @@
  */
 
 import { randomUUID } from "crypto";
-import type { AssistantMessage, AssistantMessageEventStream, Context, Model, TextContent, ThinkingContent, ToolCall } from "@mariozechner/pi-ai";
+import type { AssistantMessage, AssistantMessageEventStream, Context, Model, TextContent, ThinkingContent, ThinkingLevel, ToolCall } from "@mariozechner/pi-ai";
 import { createAssistantMessageEventStream } from "@mariozechner/pi-ai";
 import { ANTIGRAVITY_DISCOVERY_METADATA, discoverGoogleProjectId } from "./discovery.js";
 
@@ -30,6 +30,69 @@ export function getAntigravityUserAgent(): string {
 /** Strip the `antigravity/` provider prefix to the bare CCA model id. */
 export function antigravityModelId(model: string): string {
   return model.replace(/^antigravity\//, "");
+}
+
+/**
+ * Anthropic-style thinking budget for Claude served via CCA (jeo-code parity,
+ * `antigravityClaudeThinkingBudget`). gemini's budget fn returns undefined for
+ * claude ids, which would leave Antigravity Claude with NO thinking requested.
+ * minimal/low/medium/high(/xhigh) ALL think; only an UNSET effort stays
+ * non-thinking.
+ */
+export function antigravityClaudeThinkingBudget(effort?: ThinkingLevel): number | undefined {
+  switch (effort) {
+    case "minimal": return 2000;
+    case "low": return 4000;
+    case "medium": return 10000;
+    case "high": return 24000;
+    case "xhigh": return 32000;
+    default: return undefined;
+  }
+}
+
+/**
+ * Gemini thinking budget (jeo-code `geminiThinkingBudget` parity). Reasoning is
+ * available for Gemini >= 2.5 or major >= 3 (plus the rolling *-latest aliases).
+ * An in-name depth marker (`-high`/`-low`/`-thinking`) IS the user's opt-in and
+ * overrides the off-by-default floor; unmarked flash ids stay off by default.
+ */
+export function geminiThinkingBudget(model: string, effort?: ThinkingLevel, maxTokens?: number): number | undefined {
+  const m = model.toLowerCase();
+  const ver = m.match(/gemini-(\d+)(?:\.(\d+))?/);
+  const major = ver ? Number(ver[1]) : 0;
+  const minor = ver ? Number(ver[2] ?? 0) : 0;
+  const thinkingCapable = major >= 3 || (major === 2 && minor >= 5) || /flash-latest|pro-latest/.test(m);
+  if (!thinkingCapable) return undefined;
+  const floor = m.includes("pro") ? 128 : 0; // pro-class cannot fully disable thinking
+  const named: ThinkingLevel | undefined =
+    m.includes("-high") ? "high"
+    : m.includes("-low") ? "low"
+    : m.includes("thinking") ? "medium"
+    : undefined;
+  const effectiveEffort = effort ?? named;
+  let budget: number;
+  switch (effectiveEffort) {
+    case "minimal": budget = Math.max(floor, 2000); break;
+    case "low": budget = 4000; break;
+    case "medium": budget = 10000; break;
+    case "high": case "xhigh": budget = 24000; break;
+    default: budget = floor;
+  }
+  if (typeof maxTokens === "number") budget = Math.min(budget, Math.max(floor, maxTokens - 1024));
+  return budget;
+}
+
+/**
+ * The thinking budget actually requested for an Antigravity turn — Claude-via-CCA
+ * uses an Anthropic-style budget, native Gemini scales via geminiThinkingBudget
+ * (which also honours in-name depth markers like `-high`/`-low`). Centralised so
+ * the request builder stays in agreement with itself.
+ */
+export function antigravityThinkingBudget(model: string, effort?: ThinkingLevel, maxTokens?: number): number | undefined {
+  const id = antigravityModelId(model);
+  return id.toLowerCase().includes("claude")
+    ? antigravityClaudeThinkingBudget(effort)
+    : geminiThinkingBudget(id, effort, maxTokens);
 }
 
 type CcaPart = { text: string } | { inlineData: { mimeType: string; data: string } };
@@ -95,6 +158,8 @@ export interface CcaRequestInput {
   tools?: Context["tools"];
   temperature?: number;
   maxTokens?: number;
+  /** pi thinking level for this turn — drives the CCA thinkingConfig. */
+  reasoning?: ThinkingLevel;
   endpoint?: string;
 }
 
@@ -108,6 +173,20 @@ export function buildCcaRequest(input: CcaRequestInput): { url: string; headers:
   if (input.temperature !== undefined) generationConfig.temperature = input.temperature;
   // Upstream Antigravity strips maxOutputTokens for non-Claude models.
   if (isClaude) generationConfig.maxOutputTokens = input.maxTokens ?? 4000;
+
+  // Apply the thinking level. CCA emits `thought` parts ONLY when thinkingConfig
+  // has includeThoughts set — without it Antigravity never streams reasoning.
+  // Gemini scales via geminiThinkingBudget; Claude-via-CCA needs an Anthropic-style
+  // budget PLUS the interleaved-thinking beta header below — without both,
+  // Antigravity Claude (e.g. opus) never streams reasoning while native sonnet does.
+  const thinkingBudget = antigravityThinkingBudget(input.model, input.reasoning, input.maxTokens);
+  const claudeThinkingOn = isClaude && thinkingBudget !== undefined;
+  if (thinkingBudget !== undefined) {
+    generationConfig.thinkingConfig = { includeThoughts: true, thinkingBudget };
+    // Claude (via CCA) enforces max_tokens > thinking.budget_tokens — bump the
+    // output cap above the budget or CCA returns HTTP 400.
+    if (claudeThinkingOn) generationConfig.maxOutputTokens = Math.max(input.maxTokens ?? 4000, thinkingBudget + 1024);
+  }
 
   const request: Record<string, unknown> = {
     contents: antigravityContents(input.messages),
@@ -139,6 +218,8 @@ export function buildCcaRequest(input: CcaRequestInput): { url: string; headers:
       "content-type": "application/json",
       accept: "text/event-stream",
       "User-Agent": getAntigravityUserAgent(),
+      // Claude reasoning over CCA requires the Anthropic interleaved-thinking beta.
+      ...(claudeThinkingOn ? { "anthropic-beta": "interleaved-thinking-2025-05-14" } : {}),
     },
     body,
   };
@@ -223,6 +304,8 @@ export interface AntigravityStreamOptions {
   apiKey?: string;
   temperature?: number;
   maxTokens?: number;
+  /** pi thinking level for this turn — drives the CCA thinkingConfig. */
+  reasoning?: ThinkingLevel;
   signal?: AbortSignal;
   /** Credential-derived project id (set by modifyModels at login time). */
   projectId?: string;
@@ -263,6 +346,7 @@ export function streamAntigravity(model: Model<"google-generative-ai">, context:
           tools: context.tools,
           temperature: options?.temperature,
           maxTokens: options?.maxTokens,
+          reasoning: options?.reasoning,
           endpoint,
         });
         const res = await fetch(url, { method: "POST", headers, body, signal: options?.signal });
@@ -336,6 +420,9 @@ export function streamAntigravity(model: Model<"google-generative-ai">, context:
       if (textBlock) stream.push({ type: "text_end", contentIndex: indexOf(textBlock), content: textBlock.text, partial: output });
 
       if (options?.signal?.aborted) throw new Error("Request was aborted");
+      // An OAuth-authenticated CCA turn that streamed no text, reasoning, or tool
+      // call is a failed response — surface it instead of a silent empty answer.
+      if (blocks.length === 0) throw new Error("Antigravity Cloud Code Assist returned an empty response.");
       const reason: "stop" | "toolUse" = output.stopReason === "toolUse" ? "toolUse" : "stop";
       stream.push({ type: "done", reason, message: output });
       stream.end();

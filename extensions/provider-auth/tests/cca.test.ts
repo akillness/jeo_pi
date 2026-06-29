@@ -9,6 +9,9 @@ import {
   ccaText,
   ccaThought,
   ccaFunctionCalls,
+  antigravityThinkingBudget,
+  geminiThinkingBudget,
+  antigravityClaudeThinkingBudget,
 } from "../antigravity/cca.js";
 
 type Msg = Context["messages"][number];
@@ -119,6 +122,78 @@ describe("buildCcaRequest", () => {
     }).body);
     expect(parsed.request.tools[0].functionDeclarations[0].name).toBe("grep");
     expect(parsed.request.toolConfig.functionCallingConfig.mode).toBe("AUTO");
+  });
+});
+
+describe("antigravity thinking budgets", () => {
+  it("derives gemini in-name depth markers without an explicit effort", () => {
+    expect(geminiThinkingBudget("gemini-3-pro-high")).toBe(24000);
+    expect(geminiThinkingBudget("gemini-3-pro-low")).toBe(4000);
+    expect(geminiThinkingBudget("gemini-2.5-flash-thinking")).toBe(10000);
+  });
+
+  it("keeps unmarked flash off by default but pro at its floor", () => {
+    expect(geminiThinkingBudget("gemini-3-flash")).toBe(0);
+    expect(geminiThinkingBudget("gemini-3-pro")).toBe(128);
+  });
+
+  it("returns undefined for non-thinking-capable gemini", () => {
+    expect(geminiThinkingBudget("gemini-1.5-pro")).toBeUndefined();
+  });
+
+  it("scales claude with explicit effort and stays off when unset", () => {
+    expect(antigravityClaudeThinkingBudget("high")).toBe(24000);
+    expect(antigravityClaudeThinkingBudget("minimal")).toBe(2000);
+    expect(antigravityClaudeThinkingBudget(undefined)).toBeUndefined();
+  });
+
+  it("routes claude ids to the anthropic-style budget", () => {
+    expect(antigravityThinkingBudget("antigravity/claude-opus-4-8", "medium")).toBe(10000);
+    expect(antigravityThinkingBudget("antigravity/claude-opus-4-8")).toBeUndefined();
+  });
+
+  it("clamps the gemini budget below maxTokens", () => {
+    expect(geminiThinkingBudget("gemini-3-pro-high", undefined, 5000)).toBe(3976);
+  });
+});
+
+describe("buildCcaRequest thinkingConfig (CCA reasoning wire)", () => {
+  const base = {
+    project: "proj-1",
+    accessToken: "tok-abc",
+    messages: msgs({ role: "user", content: "hello" }),
+  };
+
+  it("requests includeThoughts for a gemini -high model so CCA streams reasoning", () => {
+    const { body } = buildCcaRequest({ model: "antigravity/gemini-3-pro-high", ...base });
+    const cfg = JSON.parse(body).request.generationConfig.thinkingConfig;
+    expect(cfg).toEqual({ includeThoughts: true, thinkingBudget: 24000 });
+  });
+
+  it("threads the pi reasoning level into the gemini budget", () => {
+    const { body } = buildCcaRequest({ model: "antigravity/gemini-3-flash", reasoning: "low", ...base });
+    expect(JSON.parse(body).request.generationConfig.thinkingConfig).toEqual({ includeThoughts: true, thinkingBudget: 4000 });
+  });
+
+  it("enables claude reasoning with the interleaved-thinking beta and a bumped output cap", () => {
+    const { headers, body } = buildCcaRequest({ model: "antigravity/claude-opus-4-8", reasoning: "high", maxTokens: 4000, ...base });
+    const cfg = JSON.parse(body).request.generationConfig;
+    expect(cfg.thinkingConfig).toEqual({ includeThoughts: true, thinkingBudget: 24000 });
+    expect(cfg.maxOutputTokens).toBe(24000 + 1024);
+    expect(headers["anthropic-beta"]).toBe("interleaved-thinking-2025-05-14");
+  });
+
+  it("omits thinkingConfig and the beta header for claude without an effort", () => {
+    const { headers, body } = buildCcaRequest({ model: "antigravity/claude-sonnet-4-5", maxTokens: 1234, ...base });
+    const cfg = JSON.parse(body).request.generationConfig;
+    expect(cfg.thinkingConfig).toBeUndefined();
+    expect(cfg.maxOutputTokens).toBe(1234);
+    expect(headers["anthropic-beta"]).toBeUndefined();
+  });
+
+  it("never sends the anthropic beta header for gemini reasoning", () => {
+    const { headers } = buildCcaRequest({ model: "antigravity/gemini-3-pro-high", reasoning: "high", ...base });
+    expect(headers["anthropic-beta"]).toBeUndefined();
   });
 });
 
