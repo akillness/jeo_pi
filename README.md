@@ -146,7 +146,7 @@ Pick one. Use a subscription via `/login`:
 
 ```bash
 pi
-/login                  # then select Anthropic / OpenAI / Copilot / …
+/login                  # then select Anthropic / Antigravity / OpenAI / Copilot / …
 ```
 
 …or export an API key before launching:
@@ -155,6 +155,11 @@ pi
 export ANTHROPIC_API_KEY=sk-ant-...   # or OPENAI_API_KEY, GEMINI_API_KEY, …
 pi
 ```
+
+> **Branded sign-in (Anthropic & Antigravity).** After the OAuth handshake, the
+> browser callback renders pi's own **인증 브라우저** confirmation page (the pi
+> logo with a success / error state) instead of a raw redirect, then hands the
+> token back to the terminal. Both subscription providers share the same page.
 
 ### 3. Install jeo_pi
 
