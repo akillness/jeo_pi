@@ -119,7 +119,6 @@ import { type AuthSelectorProvider, OAuthSelectorComponent } from "./components/
 import { ScopedModelsSelectorComponent } from "./components/scoped-models-selector.ts";
 import { SessionSelectorComponent } from "./components/session-selector.ts";
 import { SettingsSelectorComponent } from "./components/settings-selector.ts";
-import { SkillInvocationMessageComponent } from "./components/skill-invocation-message.ts";
 import { ToolExecutionComponent } from "./components/tool-execution.ts";
 import { TreeSelectorComponent } from "./components/tree-selector.ts";
 import { UserMessageComponent } from "./components/user-message.ts";
@@ -3143,21 +3142,17 @@ export class InteractiveMode {
 					}
 					const skillBlock = parseSkillBlock(textContent);
 					if (skillBlock) {
-						// Render skill block (collapsible)
-						const component = new SkillInvocationMessageComponent(
-							skillBlock,
+						// Render user message and a small indicator for the skill instead of the full block
+						let textToRender = `*(Invoked skill: **${skillBlock.name}**)*`;
+						if (skillBlock.userMessage) {
+							textToRender += `\n\n${skillBlock.userMessage}`;
+						}
+						
+						const userComponent = new UserMessageComponent(
+							textToRender,
 							this.getMarkdownThemeWithSettings(),
 						);
-						component.setExpanded(this.toolOutputExpanded);
-						this.chatContainer.addChild(component);
-						// Render user message separately if present
-						if (skillBlock.userMessage) {
-							const userComponent = new UserMessageComponent(
-								skillBlock.userMessage,
-								this.getMarkdownThemeWithSettings(),
-							);
-							this.chatContainer.addChild(userComponent);
-						}
+						this.chatContainer.addChild(userComponent);
 					} else {
 						const userComponent = new UserMessageComponent(textContent, this.getMarkdownThemeWithSettings());
 						this.chatContainer.addChild(userComponent);

@@ -9,7 +9,7 @@
  * wire shape, a tool-forced prompt, and the full pi streamAnthropic runtime path
  * that pi invokes after /login → "Use a subscription" → Claude Pro/Max.
  */
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 import type { Context, Model } from "@mariozechner/pi-ai";
@@ -41,7 +41,30 @@ function loadAnthropicCreds(): OAuthEntry | null {
   return null;
 }
 
-/** Return a fresh OAuth access token, refreshing if near expiry. */
+const AUTH_PATH = join(homedir(), ".pi", "agent", "auth.json");
+
+/**
+ * Persist a refreshed credential back to auth.json. Anthropic ROTATES the
+ * refresh token on every refresh (single-use) and invalidates the prior
+ * access+refresh pair, so a refresh whose result is discarded bricks the stored
+ * credential — the next refresh then fails with HTTP 400
+ * `invalid_grant: Refresh token not found or invalid`. Writing the rotated pair
+ * back keeps the credential usable across runs.
+ */
+function persistCreds(refreshed: { access: string; refresh: string; expires: number; accountId?: string; email?: string }): void {
+  const all = JSON.parse(readFileSync(AUTH_PATH, "utf-8")) as Record<string, OAuthEntry>;
+  all.anthropic = {
+    type: "oauth",
+    access: refreshed.access,
+    refresh: refreshed.refresh,
+    expires: refreshed.expires,
+    ...(refreshed.accountId ? { accountId: refreshed.accountId } : {}),
+    ...(refreshed.email ? { email: refreshed.email } : {}),
+  };
+  writeFileSync(AUTH_PATH, JSON.stringify(all, null, 2), "utf-8");
+}
+
+/** Return a fresh OAuth access token, refreshing (and persisting) if near expiry. */
 async function freshToken(creds: OAuthEntry): Promise<string> {
   if (creds.expires < Date.now() + 60_000) {
     const refreshed = await refreshAnthropicToken({
@@ -51,6 +74,7 @@ async function freshToken(creds: OAuthEntry): Promise<string> {
       accountId: creds.accountId,
       email: creds.email,
     });
+    persistCreds(refreshed);
     return refreshed.access;
   }
   return creds.access;
