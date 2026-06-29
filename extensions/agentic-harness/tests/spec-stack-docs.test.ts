@@ -38,6 +38,12 @@ describe("spec-stack skill docs", () => {
     for (const role of ["planner", "architect", "critic", "executor"]) {
       expect(src).toContain(role);
     }
+
+    // --auto non-interactive interview (reflected from deep-interview) must
+    // still honor the ambiguity gate, not bypass it.
+    expect(src).toContain("--auto");
+    expect(src).toMatch(/non-interactive/i);
+    expect(src).toMatch(/never bypasses the ambiguity gate/i);
   });
 });
 

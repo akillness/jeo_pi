@@ -41,6 +41,14 @@ Success 25% / Context 15%). Do not freeze the seed until **Ambiguity ≤ 0.2**.
 The `/clarify` output produces a Goal Contract with non-goals, success
 criteria, edge cases, and the technical context required to proceed.
 
+When an interactive dialogue is not possible (CI, batch, or unattended runs),
+use the **`--auto` non-interactive mode**: the interview answers its own
+clarifying questions from the available context and stated assumptions instead
+of blocking on a human. `--auto` reduces ambiguity without a human in the loop
+but **never bypasses the ambiguity gate** — it still must reach Ambiguity ≤ 0.2
+before a seed is frozen, and it records the assumptions it made so drift stays
+auditable.
+
 ### 2. Seed — freeze the spec
 
 Capture the frozen contract under `.ouroboros/seeds/<name>-seed.yaml`:
