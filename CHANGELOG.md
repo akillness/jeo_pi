@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.0](https://github.com/akillness/jeo-pi/compare/v1.10.0...v1.11.0) (2026-06-29)
+
+### Features
+
+* **welcome:** build a jeo_pi landing page on startup ([78a51a2](https://github.com/akillness/jeo-pi/commit/78a51a2b2c9ae36de3091e53196d6fd3fa0f2738))
+
+### Documentation
+
+* document standalone jeo-pi install independent of roach-pi ([7848ab5](https://github.com/akillness/jeo-pi/commit/7848ab510350c03ad4983a239d26467baf4a5f01))
+* rebrand README to jeo_pi, regen mascot, refresh badges + release config ([7e7f0d8](https://github.com/akillness/jeo-pi/commit/7e7f0d81450c5557975de82ac9d837e46256b837))
+* use canonical akillness/jeo-pi repo slug in README links and badges ([75690c6](https://github.com/akillness/jeo-pi/commit/75690c6ad0bf9eb218f9b2b042848f6d057dfa1f))
+
 ## [1.10.0](https://github.com/akillness/jeo-pi/compare/v1.9.0...v1.10.0) (2026-06-29)
 
 ### Features
