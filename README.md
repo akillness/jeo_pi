@@ -168,7 +168,7 @@ pi
 pi install git:github.com/akillness/jeo-pi
 
 # …pin to a tag or commit
-pi install git:github.com/akillness/jeo-pi@v1.12.0
+pi install git:github.com/akillness/jeo-pi@v1.19.0
 ```
 
 <details><summary>Install from a local checkout (for development)</summary>
