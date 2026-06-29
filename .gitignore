@@ -1,0 +1,11 @@
+node_modules/
+.codex
+.pi/
+.omo/
+.reasonix/
+artifacts/
+comic/
+nul
+.jeo/
+graphify-out/
+.DS_Store
