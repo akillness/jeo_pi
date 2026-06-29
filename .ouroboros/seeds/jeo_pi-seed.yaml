@@ -45,3 +45,5 @@ evolution_log:
     note: "Add agents/ + skills/ AGENTS.md registries (reflected from jeo-code doc pattern) with sync tests. Verified vitest extensions = 809 pass."
   - rev: 8
     note: "Add parent agentic-harness/AGENTS.md module index; fix dangling Parent links; docs-tree test enforces parent/child reference integrity. Verified vitest extensions = 812 pass."
+  - rev: 9
+    note: "Doc sync: add spec-deep-dive + AGENTS.md documentation-tree sections to docs/jeo-pi/spec-stack.md and README. No code change; vitest unaffected (812 pass)."

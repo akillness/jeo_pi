@@ -13,6 +13,12 @@ of bolting on a parallel framework.
 | `ralplan` (planner/architect/critic) | read-only role agents in `agents/` |
 | `team` / executor | `team` tool + `executor` agent (write) |
 | `ultragoal` (verify) | `/goal` runtime + verifier subagent (PASS gate) |
+| `deep-dive` (trace → clarify) | `spec-deep-dive` skill (3-lane trace → 3-point injection → `/clarify`) |
+
+The two reflected workflow skills live under
+`extensions/agentic-harness/skills/`: `spec-stack` (the full loop) and
+`spec-deep-dive` (root-cause investigation before requirements, for defects with
+an unknown cause).
 
 ## The loop
 
@@ -45,9 +51,24 @@ Interview → Seed → Execute → Evaluate → Evolve
 
 ```bash
 bun install
-bun run test                         # 804/804 extension tests via vitest
+bun run test                         # extension tests via vitest (>800)
 npx vitest run extensions/agentic-harness/tests/spec-stack-docs.test.ts
 ```
 
 `pi-core-changes/` tests require the upstream pi-mono `src/` tree and are out of
 scope for standalone runs (`bun run test:core`).
+
+## Documentation tree
+
+Each harness directory carries an `AGENTS.md` registry kept in sync by tests:
+
+| File | Role |
+|------|------|
+| `extensions/agentic-harness/AGENTS.md` | Module index (purpose, key files, subdirs) |
+| `extensions/agentic-harness/agents/AGENTS.md` | All role prompts + capability table |
+| `extensions/agentic-harness/skills/AGENTS.md` | All bundled skills + purpose table |
+
+`tests/agents-registry.test.ts`, `tests/skills-registry.test.ts`, and
+`tests/docs-tree.test.ts` fail if a prompt or skill is added, removed, or
+renamed without updating its registry — documentation cannot silently drift from
+the code.
