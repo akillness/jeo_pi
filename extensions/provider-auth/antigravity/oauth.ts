@@ -15,6 +15,7 @@
 
 import { createServer } from "http";
 import type { OAuthCredentials, OAuthLoginCallbacks } from "@mariozechner/pi-ai";
+import { authErrorHtml, authSuccessHtml } from "../auth-page.js";
 import { ANTIGRAVITY_DISCOVERY_METADATA, discoverGoogleProjectId } from "./discovery.js";
 
 const decode = (s: string): string => Buffer.from(s, "base64").toString("utf-8");
@@ -179,28 +180,36 @@ export async function loginAntigravity(callbacks: OAuthLoginCallbacks): Promise<
       try {
         const url = new URL(req.url ?? "/", `http://localhost:${ANTIGRAVITY_CALLBACK_PORT}`);
         if (url.pathname !== ANTIGRAVITY_CALLBACK_PATH) {
-          res.statusCode = 404;
-          res.end("Not found");
+          res.writeHead(404, { "content-type": "text/html; charset=utf-8" });
+          res.end(authErrorHtml("Callback route not found."));
           return;
         }
         const returnedState = url.searchParams.get("state");
         const code = url.searchParams.get("code");
         const error = url.searchParams.get("error");
-        res.statusCode = 200;
-        res.setHeader("content-type", "text/html");
         if (error) {
-          res.end(`<h1>Antigravity sign-in failed</h1><p>${error}</p>`);
+          res.writeHead(400, { "content-type": "text/html; charset=utf-8" });
+          res.end(authErrorHtml("Antigravity sign-in did not complete.", `Error: ${error}`));
           server.close();
           reject(new Error(`Antigravity authorization error: ${error}`));
           return;
         }
         if (!code || returnedState !== state) {
-          res.end("<h1>Antigravity sign-in failed</h1><p>Invalid callback.</p>");
+          res.writeHead(400, { "content-type": "text/html; charset=utf-8" });
+          res.end(
+            authErrorHtml(
+              "Antigravity sign-in could not be verified.",
+              "The callback was missing a code or its state did not match.",
+            ),
+          );
           server.close();
           reject(new Error("Antigravity callback was missing a code or had a state mismatch."));
           return;
         }
-        res.end("<h1>Antigravity sign-in complete</h1><p>You can return to your terminal.</p>");
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+        res.end(authSuccessHtml("Antigravity sign-in complete — you can close this tab and return to your terminal."));
+        server.close();
+        resolve(code);
         server.close();
         resolve(code);
       } catch (err) {
