@@ -72,12 +72,19 @@ export function supportsAdaptiveThinkingDisplay(model: string): boolean {
 
 export type AnthropicThinkingMode = "adaptive" | "budget-effort" | "budget";
 
-/** Thinking transport per model (jeo-code `inferThinkingControlMode` parity). */
+/**
+ * Thinking transport per model (jeo-code `inferThinkingControlMode` parity).
+ *
+ * The `budget-effort` transport (budget_tokens + `output_config.effort`) is
+ * accepted ONLY by Opus 4.5. Sonnet 4.5 and Haiku 4.5 REJECT the effort field
+ * ("This model does not support the effort parameter." → HTTP 400), so they fall
+ * through to plain `budget` thinking. Verified live against `/v1/messages`.
+ */
 export function anthropicThinkingMode(model: string): AnthropicThinkingMode {
   const v = parseAnthropicVersion(model);
   if (!v) return "budget";
   if (v.major > 4 || (v.major === 4 && v.minor >= 6)) return "adaptive";
-  if (v.major === 4 && v.minor === 5) return "budget-effort";
+  if (v.kind === "opus" && v.major === 4 && v.minor === 5) return "budget-effort";
   return "budget";
 }
 
@@ -254,6 +261,8 @@ export interface AnthropicRequestInput {
   baseUrl?: string;
   /** Fail-safe retry: drop replayed thinking artifacts (plain history). */
   stripArtifacts?: boolean;
+  /** Fail-safe retry: force plain budget thinking (no adaptive / output_config effort). */
+  forceBudgetThinking?: boolean;
 }
 
 /** Build the Anthropic `/v1/messages` request. Pure. */
@@ -267,7 +276,11 @@ export function buildAnthropicRequest(input: AnthropicRequestInput): {
   const maxTokens = input.maxTokens ?? 4000;
   const effort = input.reasoning;
   const thinkingEnabled = effort !== undefined;
-  const thinkingMode = thinkingEnabled ? anthropicThinkingMode(model) : "budget";
+  const thinkingMode = thinkingEnabled
+    ? input.forceBudgetThinking
+      ? "budget"
+      : anthropicThinkingMode(model)
+    : "budget";
   const thinkingBudget =
     thinkingEnabled && thinkingMode !== "adaptive" ? anthropicThinkingBudget(effort, maxTokens) : undefined;
   const anthropicMessages = buildAnthropicMessages(input.messages, thinkingEnabled && !input.stripArtifacts);
@@ -376,6 +389,27 @@ export function isReasoningArtifactError(status: number, detail: string): boolea
   return status === 400 && /thinking|signature|redacted_thinking/i.test(detail);
 }
 
+/**
+ * A 400 rejecting the effort / adaptive thinking transport — the model accepts
+ * extended thinking but not the `output_config.effort` field or `type:"adaptive"`
+ * (e.g. Sonnet 4.5 / Haiku 4.5: "This model does not support the effort
+ * parameter."). The fail-safe retries once with plain budget thinking.
+ */
+export function isEffortUnsupportedError(status: number, detail: string): boolean {
+  return status === 400 && /does not support the effort parameter|adaptive thinking is not supported/i.test(detail);
+}
+
+/**
+ * A 400 where Anthropic classifies the OAuth call as THIRD-PARTY-APP usage and
+ * declines to bill it against the Claude Pro/Max plan ("Third-party apps now
+ * draw from your extra usage, not your plan limits."). This fires when the
+ * subscription's separate extra-usage balance is empty — it is an account/billing
+ * state, NOT a malformed request, so retrying the wire shape cannot fix it.
+ */
+export function isThirdPartyUsageError(status: number, detail: string): boolean {
+  return status === 400 && /third-party apps|extra usage|draw from your/i.test(detail);
+}
+
 function emptyCompletionError(stopReason: string | undefined): Error {
   const hint =
     stopReason === "max_tokens"
@@ -428,18 +462,35 @@ export interface AnthropicStreamOptions {
 }
 
 async function postAnthropic(input: AnthropicRequestInput, signal?: AbortSignal): Promise<Response> {
-  const send = (stripArtifacts: boolean) => {
-    const { url, headers, body } = buildAnthropicRequest({ ...input, stripArtifacts });
+  const send = (overrides: Partial<AnthropicRequestInput>) => {
+    const { url, headers, body } = buildAnthropicRequest({ ...input, ...overrides });
     return fetch(url, { method: "POST", headers, body, signal });
   };
-  let response = await send(false);
+  let response = await send({});
   if (response.ok) return response;
   const detail = await response.text().catch(() => "");
-  // Fail-safe: a rejected replay artifact → retry once with artifacts stripped.
-  if (isReasoningArtifactError(response.status, detail)) {
-    response = await send(true);
+  // Fail-safe: the model rejects the effort/adaptive thinking transport → retry once
+  // with plain budget thinking (drops output_config.effort and type:"adaptive").
+  if (isEffortUnsupportedError(response.status, detail)) {
+    response = await send({ forceBudgetThinking: true });
     if (response.ok) return response;
     throw new Error(`Anthropic request failed (HTTP ${response.status}): ${await response.text().catch(() => "")}`);
+  }
+  // Fail-safe: a rejected replay artifact → retry once with artifacts stripped.
+  if (isReasoningArtifactError(response.status, detail)) {
+    response = await send({ stripArtifacts: true });
+    if (response.ok) return response;
+    throw new Error(`Anthropic request failed (HTTP ${response.status}): ${await response.text().catch(() => "")}`);
+  }
+  // Account/billing state, not a wire problem: Anthropic is treating this Claude
+  // Code OAuth call as third-party-app usage and the plan's extra-usage balance is
+  // empty. Surface an actionable message instead of the raw API string.
+  if (isThirdPartyUsageError(response.status, detail)) {
+    throw new Error(
+      "Claude declined this request: your Pro/Max plan is billing third-party-app usage to a separate extra-usage balance that is empty. " +
+        "Add extra usage at https://claude.ai/settings/usage, or run /login → \"Use an API key\" with an sk-ant-api… key (usage-billed) to bypass the subscription limit. " +
+        `(Anthropic HTTP ${response.status})`,
+    );
   }
   throw new Error(`Anthropic request failed (HTTP ${response.status}): ${detail}`);
 }

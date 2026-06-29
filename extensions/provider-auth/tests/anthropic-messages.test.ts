@@ -9,7 +9,9 @@ import {
   buildAnthropicRequest,
   headersFor,
   isOAuthToken,
+  isEffortUnsupportedError,
   isReasoningArtifactError,
+  isThirdPartyUsageError,
   parseAnthropicVersion,
   stripAnthropicPrefix,
   supportsAdaptiveThinkingDisplay,
@@ -53,10 +55,14 @@ describe("parseAnthropicVersion", () => {
 });
 
 describe("anthropicThinkingMode", () => {
-  it("selects adaptive for 4.6+, budget-effort for 4.5, budget otherwise", () => {
+  it("selects adaptive for 4.6+, budget-effort only for Opus 4.5, budget otherwise", () => {
     expect(anthropicThinkingMode("claude-opus-4-7")).toBe("adaptive");
     expect(anthropicThinkingMode("claude-sonnet-4-6")).toBe("adaptive");
-    expect(anthropicThinkingMode("claude-sonnet-4-5")).toBe("budget-effort");
+    // Opus 4.5 accepts output_config.effort alongside budget thinking.
+    expect(anthropicThinkingMode("claude-opus-4-5-20251101")).toBe("budget-effort");
+    // Sonnet/Haiku 4.5 REJECT the effort parameter → plain budget thinking.
+    expect(anthropicThinkingMode("claude-sonnet-4-5")).toBe("budget");
+    expect(anthropicThinkingMode("claude-haiku-4-5")).toBe("budget");
     expect(anthropicThinkingMode("claude-3-5-sonnet")).toBe("budget");
   });
 });
@@ -244,12 +250,29 @@ describe("buildAnthropicRequest", () => {
     expect(parsed.metadata).toBeUndefined();
   });
 
-  it("uses budget-effort thinking for Sonnet 4.5 with max_tokens above the budget", () => {
+  it("uses plain budget thinking for Sonnet 4.5 (no effort field — the API rejects it)", () => {
     const body = parseBody("claude-sonnet-4-5", { reasoning: "high", maxTokens: 8000 });
     expect(body.thinking).toEqual({ type: "enabled", budget_tokens: 6976, display: "summarized" });
-    expect(body.output_config).toEqual({ effort: "high" });
+    expect(body.output_config).toBeUndefined();
     expect(body.max_tokens).toBeGreaterThan(body.thinking.budget_tokens);
   });
+
+  it("uses budget-effort thinking for Opus 4.5 (it accepts the effort field)", () => {
+    const body = parseBody("claude-opus-4-5-20251101", { reasoning: "high", maxTokens: 8000 });
+    expect(body.thinking).toEqual({ type: "enabled", budget_tokens: 6976, display: "summarized" });
+    expect(body.output_config).toEqual({ effort: "high" });
+  });
+
+  it("forceBudgetThinking drops adaptive + output_config for the effort-rejection retry", () => {
+    const adaptive = parseBody("claude-opus-4-7", { reasoning: "medium" });
+    expect(adaptive.thinking).toEqual({ type: "adaptive", display: "summarized" });
+    expect(adaptive.output_config).toEqual({ effort: "medium" });
+    const forced = parseBody("claude-opus-4-7", { reasoning: "medium", forceBudgetThinking: true });
+    expect(forced.thinking.type).toBe("enabled");
+    expect(forced.thinking.budget_tokens).toBeGreaterThan(0);
+    expect(forced.output_config).toBeUndefined();
+  });
+
 
   it("uses adaptive thinking with summarized display for Opus 4.7 (no budget_tokens)", () => {
     const body = parseBody("claude-opus-4-7", { reasoning: "medium" });
@@ -281,3 +304,29 @@ describe("isReasoningArtifactError", () => {
     expect(isReasoningArtifactError(401, "thinking")).toBe(false);
   });
 });
+
+describe("isEffortUnsupportedError", () => {
+  it("flags a 400 that rejects the effort / adaptive thinking transport", () => {
+    expect(isEffortUnsupportedError(400, "This model does not support the effort parameter.")).toBe(true);
+    expect(isEffortUnsupportedError(400, "adaptive thinking is not supported on this model")).toBe(true);
+    expect(isEffortUnsupportedError(400, "invalid signature for thinking block")).toBe(false);
+    expect(isEffortUnsupportedError(429, "This model does not support the effort parameter.")).toBe(false);
+  });
+});
+
+describe("isThirdPartyUsageError", () => {
+  it("flags a 400 that bills OAuth usage to a third-party extra-usage balance", () => {
+    expect(
+      isThirdPartyUsageError(
+        400,
+        "Third-party apps now draw from your extra usage, not your plan limits. Add more at claude.ai/settings/usage and keep going.",
+      ),
+    ).toBe(true);
+    expect(isThirdPartyUsageError(400, "This model does not support the effort parameter.")).toBe(false);
+    expect(isThirdPartyUsageError(400, "invalid signature for thinking block")).toBe(false);
+    expect(
+      isThirdPartyUsageError(429, "Third-party apps now draw from your extra usage, not your plan limits."),
+    ).toBe(false);
+  });
+});
+

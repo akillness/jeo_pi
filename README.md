@@ -166,6 +166,14 @@ pi
 > `antigravity/claude-opus-4-6-thinking`. These were verified with the real `pi`
 > CLI path; broader static aliases from `jeo-code` are intentionally hidden when
 > CCA returns HTTP 400/404 for them.
+>
+> **Anthropic subscription vs. extra usage.** When a Claude Pro/Max OAuth login
+> hits Anthropic's "Third-party apps now draw from your extra usage, not your
+> plan limits" response, jeo-pi surfaces an actionable error (add extra usage at
+> `claude.ai/settings/usage`, or `/login → Use an API key` with an `sk-ant-api…`
+> key) instead of the raw HTTP 400. The Anthropic provider also retries once with
+> plain budget thinking when a model rejects the `effort` parameter (Sonnet/Haiku
+> 4.5), and once with thinking artifacts stripped on a rejected replay.
 
 ### 3. Install jeo-pi
 

@@ -14,6 +14,7 @@
  */
 
 import { createServer } from "http";
+import type { Socket } from "net";
 import type { OAuthCredentials, OAuthLoginCallbacks } from "@mariozechner/pi-ai";
 import { authErrorHtml, authSuccessHtml } from "../auth-page.js";
 import { ANTIGRAVITY_DISCOVERY_METADATA, discoverGoogleProjectId } from "./discovery.js";
@@ -43,6 +44,40 @@ export const ANTIGRAVITY_SCOPES = [
   "https://www.googleapis.com/auth/cclog",
   "https://www.googleapis.com/auth/experimentsandconfigs",
 ];
+
+/**
+ * Hard ceiling for every login-time Google request (token exchange, userinfo,
+ * project discovery). Without it a stalled connection hangs the login forever:
+ * the browser already shows the success page, but the terminal flow never
+ * resolves because it is still awaiting a fetch that will never settle.
+ */
+const NETWORK_TIMEOUT_MS = 30_000;
+
+/**
+ * Build an AbortSignal that fires when `parent` aborts OR after `ms`, returning
+ * a `cancel()` that clears the timer once the request settles. Always call
+ * `cancel()` in a `finally` so a fast login does not leave a 30s timer pinning
+ * the event loop (which would delay process exit after a successful login).
+ */
+function deadline(ms: number, parent?: AbortSignal): { signal: AbortSignal; cancel: () => void } {
+  const controller = new AbortController();
+  const onParentAbort = () => controller.abort((parent as AbortSignal).reason);
+  const timer = setTimeout(
+    () => controller.abort(new Error(`Antigravity network request timed out after ${ms}ms`)),
+    ms,
+  );
+  if (parent) {
+    if (parent.aborted) controller.abort(parent.reason);
+    else parent.addEventListener("abort", onParentAbort, { once: true });
+  }
+  return {
+    signal: controller.signal,
+    cancel: () => {
+      clearTimeout(timer);
+      parent?.removeEventListener("abort", onParentAbort);
+    },
+  };
+}
 
 /** The Antigravity OAuth client id (decoded from the bundled base64 chunks). */
 export function antigravityClientId(): string {
@@ -94,14 +129,18 @@ export function getAntigravityApiKey(credentials: OAuthCredentials): string {
   return credentials.access;
 }
 
-async function getUserEmail(access: string): Promise<string | undefined> {
+async function getUserEmail(access: string, parentSignal?: AbortSignal): Promise<string | undefined> {
+  const timeout = deadline(NETWORK_TIMEOUT_MS, parentSignal);
   try {
     const res = await fetch("https://www.googleapis.com/oauth2/v1/userinfo?alt=json", {
       headers: { authorization: `Bearer ${access}` },
+      signal: timeout.signal,
     });
     if (res.ok) return ((await res.json()) as { email?: string }).email;
   } catch {
-    /* email is optional */
+    /* email is optional — a timeout/abort here must not block login */
+  } finally {
+    timeout.cancel();
   }
   return undefined;
 }
@@ -122,25 +161,44 @@ function toCredentials(data: TokenResponse, prevRefresh?: string): OAuthCredenti
 }
 
 /** Exchange an authorization code for credentials, attaching email + discovered project. */
-export async function exchangeAntigravityCode(code: string, redirectUri: string): Promise<OAuthCredentials> {
-  const res = await fetch(ANTIGRAVITY_TOKEN_URL, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: buildTokenExchangeBody(code, redirectUri),
-  });
-  if (!res.ok) throw new Error(`Antigravity token exchange failed (HTTP ${res.status}): ${await res.text()}`);
-  const data = (await res.json()) as TokenResponse;
+export async function exchangeAntigravityCode(
+  code: string,
+  redirectUri: string,
+  parentSignal?: AbortSignal,
+): Promise<OAuthCredentials> {
+  const exchange = deadline(NETWORK_TIMEOUT_MS, parentSignal);
+  let data: TokenResponse;
+  try {
+    const res = await fetch(ANTIGRAVITY_TOKEN_URL, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: buildTokenExchangeBody(code, redirectUri),
+      signal: exchange.signal,
+    });
+    if (!res.ok) throw new Error(`Antigravity token exchange failed (HTTP ${res.status}): ${await res.text()}`);
+    data = (await res.json()) as TokenResponse;
+  } finally {
+    exchange.cancel();
+  }
   if (!data.refresh_token) throw new Error("No refresh token received from Google. Retry with prompt=consent.");
   const creds = toCredentials(data);
-  creds.email = await getUserEmail(data.access_token);
+  creds.email = await getUserEmail(data.access_token, parentSignal);
   let projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT_ID || undefined;
   if (!projectId) {
+    // Project discovery is best-effort and the slowest leg (loadCodeAssist +
+    // onboardUser + polling). Bound it so a stalled Cloud Code Assist endpoint
+    // cannot hang the whole login — the adapter retries discovery lazily on the
+    // first message when this falls through.
+    const discovery = deadline(NETWORK_TIMEOUT_MS, parentSignal);
     try {
       projectId = await discoverGoogleProjectId(data.access_token, {
         metadata: { ...ANTIGRAVITY_DISCOVERY_METADATA },
+        signal: discovery.signal,
       });
     } catch {
-      projectId = undefined; // best-effort: the adapter retries discovery lazily
+      projectId = undefined;
+    } finally {
+      discovery.cancel();
     }
   }
   if (projectId) creds.projectId = projectId;
@@ -149,13 +207,20 @@ export async function exchangeAntigravityCode(code: string, redirectUri: string)
 
 /** Refresh expired Antigravity credentials. */
 export async function refreshAntigravityToken(credentials: OAuthCredentials): Promise<OAuthCredentials> {
-  const res = await fetch(ANTIGRAVITY_TOKEN_URL, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: buildRefreshBody(credentials.refresh),
-  });
-  if (!res.ok) throw new Error(`Antigravity token refresh failed (HTTP ${res.status}): ${await res.text()}`);
-  const data = (await res.json()) as TokenResponse;
+  const timeout = deadline(NETWORK_TIMEOUT_MS);
+  let data: TokenResponse;
+  try {
+    const res = await fetch(ANTIGRAVITY_TOKEN_URL, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: buildRefreshBody(credentials.refresh),
+      signal: timeout.signal,
+    });
+    if (!res.ok) throw new Error(`Antigravity token refresh failed (HTTP ${res.status}): ${await res.text()}`);
+    data = (await res.json()) as TokenResponse;
+  } finally {
+    timeout.cancel();
+  }
   const refreshed = toCredentials(data, credentials.refresh);
   // Preserve discovery metadata across refreshes.
   if (credentials.projectId) refreshed.projectId = credentials.projectId;
@@ -176,49 +241,69 @@ export async function loginAntigravity(callbacks: OAuthLoginCallbacks): Promise<
   const authUrl = buildAuthUrl(redirectUri, state);
 
   const codePromise = new Promise<string>((resolve, reject) => {
+    // Track live sockets so the fixed callback port can be released the instant
+    // the round-trip ends. A browser opens the redirect with HTTP keep-alive, so
+    // server.close() alone leaves the socket — and the port — bound until the
+    // browser's idle timeout. The NEXT login then hits EADDRINUSE on listen(),
+    // silently degrades to manual code entry, and the page appears to hang.
+    const sockets = new Set<Socket>();
     const server = createServer((req, res) => {
+      const send = (status: number, html: string): void => {
+        res.writeHead(status, { "content-type": "text/html; charset=utf-8", connection: "close" });
+        res.end(html);
+      };
+      // Stop listening and destroy any *idle* keep-alive sockets. The active
+      // response socket carries `Connection: close`, so it closes on its own
+      // once the HTML has flushed (destroying it here could truncate the page).
+      const shutdown = (): void => {
+        server.close();
+        for (const s of sockets) if (s !== req.socket) s.destroy();
+      };
       try {
         const url = new URL(req.url ?? "/", `http://localhost:${ANTIGRAVITY_CALLBACK_PORT}`);
         if (url.pathname !== ANTIGRAVITY_CALLBACK_PATH) {
-          res.writeHead(404, { "content-type": "text/html; charset=utf-8" });
-          res.end(authErrorHtml("Callback route not found."));
+          // e.g. a favicon request — answer but keep waiting for the real callback.
+          send(404, authErrorHtml("Callback route not found."));
           return;
         }
         const returnedState = url.searchParams.get("state");
         const code = url.searchParams.get("code");
         const error = url.searchParams.get("error");
         if (error) {
-          res.writeHead(400, { "content-type": "text/html; charset=utf-8" });
-          res.end(authErrorHtml("Antigravity sign-in did not complete.", `Error: ${error}`));
-          server.close();
+          send(400, authErrorHtml("Antigravity sign-in did not complete.", `Error: ${error}`));
+          shutdown();
           reject(new Error(`Antigravity authorization error: ${error}`));
           return;
         }
         if (!code || returnedState !== state) {
-          res.writeHead(400, { "content-type": "text/html; charset=utf-8" });
-          res.end(
+          send(
+            400,
             authErrorHtml(
               "Antigravity sign-in could not be verified.",
               "The callback was missing a code or its state did not match.",
             ),
           );
-          server.close();
+          shutdown();
           reject(new Error("Antigravity callback was missing a code or had a state mismatch."));
           return;
         }
-        res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-        res.end(authSuccessHtml("Antigravity sign-in complete — you can close this tab and return to your terminal."));
-        server.close();
+        send(200, authSuccessHtml("Antigravity sign-in complete — you can close this tab and return to your terminal."));
+        shutdown();
         resolve(code);
       } catch (err) {
-        server.close();
+        shutdown();
         reject(err as Error);
       }
+    });
+    server.on("connection", (socket: Socket) => {
+      sockets.add(socket);
+      socket.on("close", () => sockets.delete(socket));
     });
     server.on("error", reject);
     server.listen(ANTIGRAVITY_CALLBACK_PORT, "localhost");
     callbacks.signal?.addEventListener("abort", () => {
       server.close();
+      for (const s of sockets) s.destroy();
       reject(new Error("Antigravity login aborted."));
     });
   });
@@ -239,5 +324,5 @@ export async function loginAntigravity(callbacks: OAuthLoginCallbacks): Promise<
   }
 
   callbacks.onProgress?.("Exchanging authorization code for Antigravity tokens…");
-  return exchangeAntigravityCode(code, redirectUri);
+  return exchangeAntigravityCode(code, redirectUri, callbacks.signal);
 }

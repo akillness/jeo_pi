@@ -18,6 +18,7 @@ import {
   ANTIGRAVITY_CALLBACK_PATH,
   ANTIGRAVITY_CALLBACK_PORT,
   ANTIGRAVITY_TOKEN_URL,
+  exchangeAntigravityCode,
   loginAntigravity,
 } from "../antigravity/oauth.js";
 
@@ -141,5 +142,82 @@ describe("Antigravity OAuth callback server (pi auth browser)", () => {
     expect(res.body).toContain("<h1>Authentication failed</h1>");
 
     await rejection;
+  });
+});
+/**
+ * The slowest part of an Antigravity login is the post-callback Google work:
+ * token exchange, userinfo, and Cloud Code Assist project discovery. Before the
+ * fix these ran with no timeout and ignored the abort signal, so a single
+ * stalled connection hung the whole login *after* the browser already showed
+ * the success page. These tests pin that this network leg is now bounded and
+ * abort-aware, and that a stalled discovery degrades to "no project id" (lazy
+ * discovery on first message) instead of hanging.
+ */
+describe("exchangeAntigravityCode is bounded and abort-aware", () => {
+  const savedEnv = { ...process.env };
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    process.env = { ...savedEnv };
+  });
+
+  /** Stub: token exchange resolves; everything else hangs until its signal aborts. */
+  function stubStallingDiscovery(): void {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: unknown, init?: { signal?: AbortSignal }) => {
+        if (String(input) === ANTIGRAVITY_TOKEN_URL) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ access_token: "at-x", refresh_token: "rt-x", expires_in: 3600 }), {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            }),
+          );
+        }
+        // userinfo + Cloud Code Assist discovery never settle on their own —
+        // they reject only once their (deadline- or parent-) signal aborts.
+        return new Promise((_resolve, reject) => {
+          const signal = init?.signal;
+          if (signal?.aborted) {
+            reject(new Error("aborted"));
+            return;
+          }
+          signal?.addEventListener("abort", () => reject(new Error("aborted")));
+        });
+      }),
+    );
+  }
+
+  it("completes login when userinfo + project discovery stall, bounded by the network deadline", async () => {
+    delete process.env.GOOGLE_CLOUD_PROJECT;
+    delete process.env.GOOGLE_CLOUD_PROJECT_ID;
+    vi.useFakeTimers();
+    stubStallingDiscovery();
+
+    const promise = exchangeAntigravityCode("auth-code", "http://localhost/cb");
+    // Fire the userinfo deadline, then the discovery deadline (sequential awaits).
+    await vi.advanceTimersByTimeAsync(31_000);
+    await vi.advanceTimersByTimeAsync(31_000);
+
+    const creds = await promise;
+    expect(creds.access).toBe("at-x");
+    expect(creds.refresh).toBe("rt-x");
+    // Discovery timed out → best-effort fallback leaves the project id unset.
+    expect(creds.projectId).toBeUndefined();
+  });
+
+  it("aborts userinfo + project discovery the instant the parent signal aborts", async () => {
+    delete process.env.GOOGLE_CLOUD_PROJECT;
+    delete process.env.GOOGLE_CLOUD_PROJECT_ID;
+    stubStallingDiscovery();
+
+    const controller = new AbortController();
+    const promise = exchangeAntigravityCode("auth-code", "http://localhost/cb", controller.signal);
+    controller.abort();
+
+    const creds = await promise;
+    expect(creds.access).toBe("at-x");
+    expect(creds.projectId).toBeUndefined();
   });
 });
