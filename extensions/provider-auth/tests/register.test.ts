@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   registerAntigravityProvider,
   ANTIGRAVITY_PROVIDER,
+  ANTIGRAVITY_MODEL_IDS,
+  toAntigravityModel,
 } from "../antigravity/register.js";
 import { ANTIGRAVITY_DAILY_ENDPOINT } from "../antigravity/cca.js";
 
@@ -80,5 +82,44 @@ describe("registerAntigravityProvider", () => {
     registerAntigravityProvider(pi);
     const ids = providers[0].config.models.map((m: any) => m.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("mirrors jeo-code's antigravity catalog ids (no bogus bare gemini-3-pro)", () => {
+    const { pi, providers } = fakePi();
+    registerAntigravityProvider(pi);
+    const ids: string[] = providers[0].config.models.map((m: any) => m.id);
+
+    // Real CCA thinking-depth variants, not the bare id the backend rejects.
+    expect(ids).toContain("antigravity/gemini-3-pro-high");
+    expect(ids).toContain("antigravity/gemini-3-pro-low");
+    expect(ids).not.toContain("antigravity/gemini-3-pro");
+    // Representative coverage across the Claude / Gemini / GPT families.
+    expect(ids).toContain("antigravity/claude-sonnet-4-5");
+    expect(ids).toContain("antigravity/claude-opus-4-8-thinking");
+    expect(ids).toContain("antigravity/gpt-5.5");
+    expect(ids).toContain("antigravity/gpt-oss-120b-medium");
+    // Every id carries the provider prefix exactly once.
+    for (const id of ids) expect(id.startsWith("antigravity/")).toBe(true);
+    expect(ids.length).toBe(ANTIGRAVITY_MODEL_IDS.length);
+  });
+
+  it("derives per-family capabilities the way jeo-code's catalog does", () => {
+    const claude = toAntigravityModel("claude-sonnet-4-5");
+    expect(claude.contextWindow).toBe(200_000);
+    expect(claude.maxTokens).toBe(64_000);
+    expect(claude.input).toEqual(["text", "image"]);
+
+    const gpt5 = toAntigravityModel("gpt-5.5");
+    expect(gpt5.contextWindow).toBe(400_000);
+    expect(gpt5.maxTokens).toBe(128_000);
+
+    const gemini = toAntigravityModel("gemini-3-pro-high");
+    expect(gemini.contextWindow).toBe(1_000_000);
+    expect(gemini.maxTokens).toBe(65_536);
+    expect(gemini.reasoning).toBe(true);
+
+    // gpt-oss is the lone text-only family in the catalog.
+    const oss = toAntigravityModel("gpt-oss-120b-medium");
+    expect(oss.input).toEqual(["text"]);
   });
 });

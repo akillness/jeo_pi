@@ -248,7 +248,7 @@ export function streamAntigravity(model: Model<"google-generative-ai">, context:
   (async () => {
     try {
       const accessToken = options?.apiKey;
-      if (!accessToken) throw new Error("Antigravity requires an OAuth access token. Run /login antigravity.");
+      if (!accessToken) throw new Error("Antigravity requires an OAuth access token. Run /login → \"Use a subscription\" → Google Antigravity.");
       const project = await resolveProjectId(accessToken, options?.projectId, options?.signal);
 
       let response: Response | undefined;
