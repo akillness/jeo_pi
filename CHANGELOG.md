@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0](https://github.com/akillness/jeo_pi/compare/v1.5.0...v1.6.0) (2026-06-29)
+
+### Features
+
+* **agentic-harness:** enforce read-only/write agent capability invariant ([af694ad](https://github.com/akillness/jeo_pi/commit/af694ad2135983074e3b646f97d52675566ac590))
+
+### Documentation
+
+* **jeo-pi:** sync mapping/README/AGENTS for complete spec-* skill family ([a6233c4](https://github.com/akillness/jeo_pi/commit/a6233c4a7c6b30e3ff4a248914106b24087324f7))
+
 ## [1.5.0](https://github.com/akillness/jeo_pi/compare/v1.4.0...v1.5.0) (2026-06-29)
 
 ### Features
