@@ -146,6 +146,49 @@ describe.skipIf(!enabled)("LIVE Antigravity CCA wire", () => {
     expect(calls[0].name).toBe("get_weather");
   }, 60_000);
 
+  it("accepts a flash-3.5 tool schema containing const/anyOf (parametersJsonSchema path)", async () => {
+    const { access, projectId } = await freshToken(creds!);
+    // Regression guard: the legacy `parameters` field rejected `const` with
+    // HTTP 400 ("Unknown name \"const\" ... Cannot find field"); native Gemini
+    // must carry the full JSON Schema under `parametersJsonSchema`.
+    const { url, headers, body } = buildCcaRequest({
+      model: "antigravity/gemini-3.5-flash-low",
+      project: projectId!,
+      accessToken: access,
+      systemPrompt: "Always use the provided tool.",
+      messages: [{ role: "user", content: "Set the speed to fast for Paris." }] as any,
+      tools: [
+        {
+          name: "set_speed",
+          description: "Set the travel speed for a city",
+          parameters: {
+            type: "object",
+            properties: {
+              city: { type: "string" },
+              speed: { anyOf: [{ const: "fast" }, { const: "slow" }] },
+            },
+            required: ["city", "speed"],
+          },
+        },
+      ] as any,
+    });
+    // The Gemini schema must ride on parametersJsonSchema, never the OpenAPI `parameters`.
+    const sent = JSON.parse(body).request.tools[0].functionDeclarations[0];
+    expect(sent.parametersJsonSchema).toBeTruthy();
+    expect(sent.parameters).toBeUndefined();
+
+    const res = await fetch(url, { method: "POST", headers, body });
+    const rawText = res.ok ? "" : await res.text();
+    // The fix proves itself here: a const-bearing schema no longer 400s.
+    expect(res.ok, `HTTP ${res.status}: ${rawText}`).toBe(true);
+    const chunks = await readSseToChunks(res.body!);
+    const calls = chunks.flatMap(ccaFunctionCalls);
+    // eslint-disable-next-line no-console
+    console.log("[LIVE wire const-schema] toolCalls=%o", calls);
+    expect(calls.length, "model must request the tool").toBeGreaterThan(0);
+    expect(calls[0].name).toBe("set_speed");
+  }, 60_000);
+
   it("streams reasoning thought parts when a thinking budget is requested", async () => {
     const { access, projectId } = await freshToken(creds!);
     const { url, headers, body } = buildCcaRequest({

@@ -12,6 +12,8 @@ import {
   antigravityThinkingBudget,
   geminiThinkingBudget,
   antigravityClaudeThinkingBudget,
+  antigravityFunctionDeclarations,
+  sanitizeOpenApiSchema,
 } from "../antigravity/cca.js";
 
 type Msg = Context["messages"][number];
@@ -122,6 +124,82 @@ describe("buildCcaRequest", () => {
     }).body);
     expect(parsed.request.tools[0].functionDeclarations[0].name).toBe("grep");
     expect(parsed.request.toolConfig.functionCallingConfig.mode).toBe("AUTO");
+  });
+
+  it("sends a native Gemini tool schema as parametersJsonSchema so const/anyOf survive", () => {
+    const schema = {
+      type: "object",
+      properties: { mode: { anyOf: [{ const: "fast" }, { const: "slow" }] } },
+    };
+    const fn = JSON.parse(buildCcaRequest({
+      model: "antigravity/gemini-3.5-flash-low",
+      ...base,
+      tools: [{ name: "run", description: "run it", parameters: schema }] as unknown as Context["tools"],
+    }).body).request.tools[0].functionDeclarations[0];
+    // Regression: the legacy `parameters` field rejects `const` with HTTP 400, so
+    // Gemini must carry the full JSON Schema under `parametersJsonSchema`.
+    expect(fn.parametersJsonSchema).toEqual(schema);
+    expect(fn.parameters).toBeUndefined();
+  });
+
+  it("sends a Claude tool schema as meta-stripped parameters (CCA → Anthropic input_schema)", () => {
+    const schema = {
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      type: "object",
+      properties: { mode: { anyOf: [{ const: "fast" }, { const: "slow" }] } },
+    };
+    const fn = JSON.parse(buildCcaRequest({
+      model: "antigravity/claude-sonnet-4-6",
+      ...base,
+      tools: [{ name: "run", description: "run it", parameters: schema }] as unknown as Context["tools"],
+    }).body).request.tools[0].functionDeclarations[0];
+    expect(fn.parametersJsonSchema).toBeUndefined();
+    expect(fn.parameters.$schema).toBeUndefined();
+    // const/anyOf are preserved (Anthropic input_schema accepts them); only
+    // JSON-Schema meta declarations are dropped.
+    expect(fn.parameters.properties.mode.anyOf).toEqual([{ const: "fast" }, { const: "slow" }]);
+  });
+});
+
+describe("sanitizeOpenApiSchema", () => {
+  it("recursively strips JSON-Schema meta declarations but keeps real schema", () => {
+    const out = sanitizeOpenApiSchema({
+      $schema: "x",
+      $defs: { a: { type: "string" } },
+      definitions: {},
+      type: "object",
+      properties: { items: { type: "array", items: { $comment: "drop", type: "number" } } },
+    }) as Record<string, unknown>;
+    expect(out.$schema).toBeUndefined();
+    expect(out.$defs).toBeUndefined();
+    expect(out.definitions).toBeUndefined();
+    expect(out).toMatchObject({
+      type: "object",
+      properties: { items: { type: "array", items: { type: "number" } } },
+    });
+    expect((out.properties as any).items.items.$comment).toBeUndefined();
+  });
+
+  it("returns primitives and arrays unchanged in shape", () => {
+    expect(sanitizeOpenApiSchema("s")).toBe("s");
+    expect(sanitizeOpenApiSchema(null)).toBeNull();
+    expect(sanitizeOpenApiSchema([{ $id: "x", type: "string" }])).toEqual([{ type: "string" }]);
+  });
+});
+
+describe("antigravityFunctionDeclarations", () => {
+  const tools = [{ name: "t", description: "d", parameters: { $schema: "x", type: "object", properties: { k: { const: "v" } } } }] as unknown as NonNullable<Context["tools"]>;
+
+  it("uses parametersJsonSchema verbatim for non-Claude (Gemini/gpt-oss) models", () => {
+    const [fn] = antigravityFunctionDeclarations(tools, false);
+    expect(fn.parametersJsonSchema).toEqual({ $schema: "x", type: "object", properties: { k: { const: "v" } } });
+    expect(fn.parameters).toBeUndefined();
+  });
+
+  it("uses meta-stripped parameters for Claude models", () => {
+    const [fn] = antigravityFunctionDeclarations(tools, true);
+    expect(fn.parametersJsonSchema).toBeUndefined();
+    expect(fn.parameters).toEqual({ type: "object", properties: { k: { const: "v" } } });
   });
 });
 

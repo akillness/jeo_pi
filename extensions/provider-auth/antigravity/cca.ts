@@ -32,6 +32,57 @@ export function antigravityModelId(model: string): string {
   return model.replace(/^antigravity\//, "");
 }
 
+/** JSON-Schema meta keywords the CCA OpenAPI-3.0 `parameters` validator rejects. */
+const JSON_SCHEMA_META_KEYS = new Set([
+  "$schema",
+  "$id",
+  "$anchor",
+  "$dynamicAnchor",
+  "$vocabulary",
+  "$comment",
+  "$defs",
+  "definitions",
+]);
+
+/**
+ * Strip JSON-Schema meta declarations a tool schema may carry. Mirrors pi-ai's
+ * `sanitizeForOpenApi` — the legacy OpenAPI `parameters` form (used for Claude,
+ * which the CCA backend translates into Anthropic `input_schema`) rejects unknown
+ * meta keywords. Pure + recursive.
+ */
+export function sanitizeOpenApiSchema(schema: unknown): unknown {
+  if (Array.isArray(schema)) return schema.map(sanitizeOpenApiSchema);
+  if (typeof schema !== "object" || schema === null) return schema;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(schema as Record<string, unknown>)) {
+    if (JSON_SCHEMA_META_KEYS.has(k)) continue;
+    out[k] = sanitizeOpenApiSchema(v);
+  }
+  return out;
+}
+
+/**
+ * Build CCA `functionDeclarations` for a turn's tools.
+ *
+ * Native Gemini / gpt-oss models take the FULL JSON Schema via
+ * `parametersJsonSchema`, so keywords like `const`/`anyOf` survive. The legacy
+ * `parameters` field is an OpenAPI-3.0 subset that rejects `const` with HTTP 400
+ * (`Invalid JSON payload received. Unknown name "const" ... Cannot find field`),
+ * so it must NOT carry a Gemini tool schema. Claude-via-CCA keeps `parameters`
+ * because the backend translates it into Anthropic's `input_schema` — this
+ * mirrors pi-ai's `convertTools(tools, useParameters)` split.
+ */
+export function antigravityFunctionDeclarations(
+  tools: NonNullable<Context["tools"]>,
+  isClaude: boolean,
+): Array<Record<string, unknown>> {
+  return tools.map((t) => ({
+    name: t.name,
+    description: t.description,
+    ...(isClaude ? { parameters: sanitizeOpenApiSchema(t.parameters) } : { parametersJsonSchema: t.parameters }),
+  }));
+}
+
 /**
  * Anthropic-style thinking budget for Claude served via CCA (jeo-code parity,
  * `antigravityClaudeThinkingBudget`). gemini's budget fn returns undefined for
@@ -195,11 +246,7 @@ export function buildCcaRequest(input: CcaRequestInput): { url: string; headers:
   if (input.systemPrompt) request.systemInstruction = { role: "user", parts: [{ text: input.systemPrompt }] };
   if (Object.keys(generationConfig).length > 0) request.generationConfig = generationConfig;
   if (input.tools && input.tools.length > 0) {
-    request.tools = [
-      {
-        functionDeclarations: input.tools.map((t) => ({ name: t.name, description: t.description, parameters: t.parameters })),
-      },
-    ];
+    request.tools = [{ functionDeclarations: antigravityFunctionDeclarations(input.tools, isClaude) }];
     request.toolConfig = { functionCallingConfig: { mode: "AUTO" } };
   }
 

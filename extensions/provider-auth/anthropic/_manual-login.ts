@@ -4,20 +4,31 @@
  * Uses the REAL oauth.ts + messages.ts (no mocks) so what we verify here is
  * exactly what the provider does at runtime.
  *
+ *   bun anthropic/_manual-login.ts serve
+ *       → runs the REAL loginAnthropic() with a live localhost callback server,
+ *         prints the authorize URL, auto-captures the redirect (no expiry
+ *         window), exchanges in-process, persists creds, then pings /v1/messages.
+ *         This is the preferred path — the browser redirect to localhost:54545
+ *         is captured instantly, so the short-lived code never expires.
+ *
  *   bun anthropic/_manual-login.ts url
  *       → prints the real claude.ai authorize URL, persists pkce+state to /tmp
  *
  *   bun anthropic/_manual-login.ts exchange '<code or code#state or redirect URL>'
  *       → exchanges for real tokens, persists creds, then makes a REAL
- *         /v1/messages call and prints Claude's reply (proves it RESPONDS)
+ *         /v1/messages call and prints Claude's reply (proves it RESPONDS).
+ *         NOTE: prone to "invalid_grant: Invalid 'code'" if the paste round-trip
+ *         is slow — codes expire fast. Prefer `serve`.
  */
 import { readFileSync, writeFileSync } from "fs";
+import type { OAuthCredentials, OAuthLoginCallbacks } from "@mariozechner/pi-ai";
 import {
   ANTHROPIC_CALLBACK_PATH,
   ANTHROPIC_CALLBACK_PORT,
   buildAuthUrl,
   exchangeAnthropicCode,
   generatePkce,
+  loginAnthropic,
   parseAuthorizationCode,
 } from "./oauth.js";
 import { buildAnthropicRequest, isOAuthToken } from "./messages.js";
@@ -49,6 +60,36 @@ const REDIRECT_URI = `http://localhost:${ANTHROPIC_CALLBACK_PORT}${ANTHROPIC_CAL
 const randHex = (n: number) =>
   Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, "0")).join("");
 
+async function cmdServe() {
+  const callbacks: OAuthLoginCallbacks = {
+    onAuth: ({ url, instructions }) => {
+      console.log("\n=== Open this URL in your browser, log in, and APPROVE ===\n");
+      console.log(url);
+      console.log(`\n${instructions ?? ""}`);
+      console.log("\nThe redirect to localhost:54545 will be captured automatically — no need to paste.\n");
+    },
+    onPrompt: (prompt) =>
+      new Promise<string>((resolve) => {
+        process.stdout.write(`\n${prompt.message}${prompt.placeholder ? ` (${prompt.placeholder})` : ""}: `);
+        process.stdin.resume();
+        process.stdin.once("data", (d: Buffer) => resolve(d.toString().trim()));
+      }),
+    onProgress: (msg: string) => console.log(`… ${msg}`),
+  };
+  console.log("Starting real loginAnthropic() with live callback server on :54545 — waiting for approval…");
+  const creds = await loginAnthropic(callbacks);
+  writeFileSync(CREDS_FILE, JSON.stringify(creds), "utf-8");
+  reportCreds(creds);
+  await cmdVerify();
+}
+
+function reportCreds(creds: OAuthCredentials) {
+  console.log("Token exchange OK:");
+  console.log(`  access starts: ${creds.access.slice(0, 14)}…  isOAuth=${isOAuthToken(creds.access)}`);
+  console.log(`  accountId=${creds.accountId ?? "(none)"}  email=${creds.email ?? "(none)"}`);
+  console.log(`  expires in ~${Math.round((creds.expires - Date.now()) / 60000)} min`);
+}
+
 async function cmdUrl() {
   const state = randHex(16);
   const pkce = generatePkce();
@@ -65,10 +106,7 @@ async function cmdExchange(pasted: string) {
   console.log(`Exchanging code (state=${parsed.state.slice(0, 8)}…) …`);
   const creds = await exchangeAnthropicCode(parsed.code, parsed.state, REDIRECT_URI, verifier);
   writeFileSync(CREDS_FILE, JSON.stringify(creds), "utf-8");
-  console.log("Token exchange OK:");
-  console.log(`  access starts: ${creds.access.slice(0, 14)}…  isOAuth=${isOAuthToken(creds.access)}`);
-  console.log(`  accountId=${creds.accountId ?? "(none)"}  email=${creds.email ?? "(none)"}`);
-  console.log(`  expires in ~${Math.round((creds.expires - Date.now()) / 60000)} min`);
+  reportCreds(creds);
   await cmdVerify();
 }
 
@@ -102,9 +140,18 @@ async function cmdVerify() {
 }
 
 const [cmd, arg] = process.argv.slice(2);
-const run = cmd === "url" ? cmdUrl() : cmd === "exchange" ? cmdExchange(arg) : cmd === "verify" ? cmdVerify() : null;
+const run =
+  cmd === "serve"
+    ? cmdServe()
+    : cmd === "url"
+      ? cmdUrl()
+      : cmd === "exchange"
+        ? cmdExchange(arg)
+        : cmd === "verify"
+          ? cmdVerify()
+          : null;
 if (!run) {
-  console.log("usage: bun anthropic/_manual-login.ts <url|exchange '<code>'|verify>");
+  console.log("usage: bun anthropic/_manual-login.ts <serve|url|exchange '<code>'|verify>");
   process.exit(1);
 }
 run.catch((e) => {
