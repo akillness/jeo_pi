@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.0](https://github.com/akillness/jeo-pi/compare/v1.9.0...v1.10.0) (2026-06-29)
+
+### Features
+
+* **agentic-harness:** inject test-quality discipline into worker agents ([2cf35c4](https://github.com/akillness/jeo-pi/commit/2cf35c40b35dd730123550afefc9b87ce23026e4))
+
+### Documentation
+
+* **jeo-pi:** document discipline injection + capability enforcement ([1929114](https://github.com/akillness/jeo-pi/commit/192911458bc18d5f8bffdfe7d1b7effebf49da88))
+
 ## [1.9.0](https://github.com/akillness/jeo-pi/compare/v1.8.0...v1.9.0) (2026-06-29)
 
 ### Features
