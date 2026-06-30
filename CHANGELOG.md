@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.26.0](https://github.com/akillness/jeo-pi/compare/v1.25.0...v1.26.0) (2026-06-30)
+
+### Features
+
+* **provider-auth:** register Tencent Cloud MaaS (TokenHub) hub provider ([2f2f606](https://github.com/akillness/jeo-pi/commit/2f2f60658cba29c102d080c2b75582c1c9f487ad))
+
+### Bug Fixes
+
+* **harness:** make todowrite status/priority optional and normalized ([8d5de75](https://github.com/akillness/jeo-pi/commit/8d5de75cd7b5e6482f4923ad7ffff93549e9a0e3))
+* **scrollback:** keep the /scrollback overlay footer from being clipped ([d121c06](https://github.com/akillness/jeo-pi/commit/d121c0627acc324b54f094fada04adfdea365eed))
+
 ## [1.25.0](https://github.com/akillness/jeo-pi/compare/v1.24.0...v1.25.0) (2026-06-30)
 
 ### Features
