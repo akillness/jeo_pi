@@ -51,9 +51,40 @@ built-in Claude provider in the global `/login` registry:
 
 OAuth refresh tokens are **single-use (rotating)**: each refresh returns a new
 access+refresh pair and invalidates the prior one, so credentials are persisted
-back to `~/.pi/agent/auth.json` immediately after every refresh. Either the
-`sk-ant-…` API-key path (`ANTHROPIC_API_KEY`) or the Pro/Max OAuth subscription
-works.
+back to `~/.pi/agent/auth.json` immediately after every refresh. Both the
+`sk-ant-…` API-key path (`ANTHROPIC_API_KEY`) and the Pro/Max OAuth subscription
+authenticate — but see the third-party-usage limit below for what the
+subscription will and will not serve.
+
+### Subscription third-party-usage limit (HTTP 400)
+
+Anthropic's OAuth `/v1/messages` endpoint classifies each call as **first-party
+Claude Code** or **third-party app**. Third-party traffic is now billed to a
+separate *extra-usage* balance, so when that balance is empty the call fails with
+`HTTP 400 invalid_request_error: "Third-party apps now draw from your extra
+usage, not your plan limits."` — independent of the wire shape, which is already
+a faithful `jeo-code`/Claude-Code port (identity headers, billing/cloaking
+metadata, system prelude).
+
+Two request properties flip a jeo-pi call from first- to third-party. Both were
+isolated by live A/B replay against the real endpoint with the same OAuth token
+(a bare request and even a 216 KB *benign* prompt both return 200, so neither is
+a size limit):
+
+1. **The `todowrite` tool name.** Anthropic exact-string-matches the lowercase
+   `todowrite`; the canonical `TodoWrite` and every other spelling (`todo_write`,
+   `write_todos`, …) pass. jeo-pi registers the tool as `todowrite`, so its
+   presence alone trips the classifier.
+2. **jeo-pi's agentic system prompt.** A *content* classifier (not size) trips on
+   jeo-pi's harness framing + `<available_skills>` catalog once the jeo-pi-specific
+   content passes roughly 7 KB; an equal-size benign prompt is served fine.
+
+Because the full jeo-pi system prompt + toolset trips both gates, the **Pro/Max
+subscription returns HTTP 400 for normal jeo-pi sessions**. For guaranteed full
+functionality use an `sk-ant-api…` API key (`/login` → "Use an API key", or
+`ANTHROPIC_API_KEY`), which is usage-billed and bypasses the subscription
+classifier entirely. The runtime surfaces this exact guidance in the 400 error
+message (`anthropic/messages.ts`, `isThirdPartyUsageError`).
 
 ## Anthropic model catalogue
 
