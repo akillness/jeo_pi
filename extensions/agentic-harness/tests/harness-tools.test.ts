@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { registerHarnessTools } from "../harness-tools.js";
+import { registerHarnessTools, normalizeTodoStatus, normalizeTodoPriority } from "../harness-tools.js";
 import { HARNESS_STATE_EVENT_CUSTOM_TYPE } from "../harness-events.js";
 import { readHarnessStateSnapshot } from "../harness-storage.js";
 
@@ -208,6 +208,71 @@ describe("todowrite and todoread execute", () => {
     );
 
     expect(result.details.todos[0].status).toBe("completed");
+  });
+
+  // Regression: Gemini-family models (served via Antigravity) routinely omit
+  // status/priority. Those fields used to be REQUIRED, so pi's tool-arg
+  // validation hard-failed the whole todowrite call before execute() ran,
+  // leaving todoread permanently stuck on []. They are now optional + defaulted.
+  it("todowrite accepts items missing status/priority and defaults them", async () => {
+    const { mockPi, tools } = createMockPi();
+    registerHarnessTools(mockPi as any);
+    const ctx = createMockCtx();
+
+    const writeResult = await tools.get("todowrite")!.execute(
+      "tc-1",
+      { todos: [{ content: "first task" }, { content: "second task", priority: "high" }] },
+      undefined,
+      undefined,
+      ctx,
+    );
+
+    expect(writeResult.isError).toBeFalsy();
+    expect(writeResult.details.todos).toEqual([
+      { content: "first task", status: "pending", priority: "medium" },
+      { content: "second task", status: "pending", priority: "high" },
+    ]);
+
+    const readResult = await tools.get("todoread")!.execute("tc-2", {}, undefined, undefined, ctx);
+    expect(readResult.details.todos).toHaveLength(2);
+    expect(readResult.details.todos[0].priority).toBe("medium");
+  });
+
+  it("todowrite optional status/priority keep the schema properties present", () => {
+    const { mockPi, tools } = createMockPi();
+    registerHarnessTools(mockPi as any);
+    const writeSchema = tools.get("todowrite")!.parameters;
+    const itemRequired: string[] = writeSchema.properties.todos.items.required ?? [];
+    expect(itemRequired).toContain("content");
+    expect(itemRequired).not.toContain("status");
+    expect(itemRequired).not.toContain("priority");
+  });
+});
+
+describe("todo status/priority normalization", () => {
+  it("defaults missing or unknown status to pending", () => {
+    expect(normalizeTodoStatus(undefined)).toBe("pending");
+    expect(normalizeTodoStatus("")).toBe("pending");
+    expect(normalizeTodoStatus("garbage")).toBe("pending");
+    expect(normalizeTodoStatus(42)).toBe("pending");
+  });
+
+  it("accepts and canonicalizes known status aliases", () => {
+    expect(normalizeTodoStatus("in_progress")).toBe("in_progress");
+    expect(normalizeTodoStatus("In Progress")).toBe("in_progress");
+    expect(normalizeTodoStatus("running")).toBe("in_progress");
+    expect(normalizeTodoStatus("done")).toBe("completed");
+    expect(normalizeTodoStatus("COMPLETED")).toBe("completed");
+    expect(normalizeTodoStatus("canceled")).toBe("cancelled");
+    expect(normalizeTodoStatus("skipped")).toBe("cancelled");
+  });
+
+  it("defaults missing or unknown priority to medium", () => {
+    expect(normalizeTodoPriority(undefined)).toBe("medium");
+    expect(normalizeTodoPriority("garbage")).toBe("medium");
+    expect(normalizeTodoPriority("urgent")).toBe("high");
+    expect(normalizeTodoPriority("HIGH")).toBe("high");
+    expect(normalizeTodoPriority("low")).toBe("low");
   });
 });
 

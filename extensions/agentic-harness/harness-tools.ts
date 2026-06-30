@@ -187,12 +187,16 @@ const SimpleTodoWriteItem = Type.Object({
   content: Type.String({
     description: "Todo title: [WHERE] [HOW] to [WHY] — expect [RESULT]. Single atomic action.",
   }),
-  status: Type.String({
-    description: "pending | in_progress (ONE at a time) | completed (mark IMMEDIATELY) | cancelled",
-  }),
-  priority: Type.String({
-    description: "high (blocking) | medium (important) | low (nice-to-have)",
-  }),
+  // status/priority are OPTIONAL on the wire: Gemini-family models (served via
+  // Antigravity) routinely omit them, and pi hard-fails a tool call whose args
+  // miss a required field — which silently dropped every todowrite and left
+  // todoread returning []. Defaults are applied in execute() instead.
+  status: Type.Optional(Type.String({
+    description: "pending (default) | in_progress (ONE at a time) | completed (mark IMMEDIATELY) | cancelled",
+  })),
+  priority: Type.Optional(Type.String({
+    description: "high (blocking) | medium (default, important) | low (nice-to-have)",
+  })),
 });
 
 const TodoWriteParams = Type.Object({
@@ -205,6 +209,48 @@ const TodoWriteParams = Type.Object({
 const TodoReadParams = Type.Object({});
 
 // ---------- Registration ----------
+
+const VALID_TODO_STATUSES: ReadonlySet<SimpleTodoStatus> = new Set([
+  "pending",
+  "in_progress",
+  "completed",
+  "cancelled",
+]);
+const VALID_TODO_PRIORITIES: ReadonlySet<SimpleTodoPriority> = new Set([
+  "high",
+  "medium",
+  "low",
+]);
+
+/**
+ * Coerce a model-supplied status into a valid SimpleTodoStatus. Missing or
+ * unrecognised values default to "pending" — Gemini-family models (via
+ * Antigravity) frequently omit this field, and a hard schema failure here
+ * silently dropped the whole todowrite call, leaving todoread stuck on [].
+ */
+export function normalizeTodoStatus(value: unknown): SimpleTodoStatus {
+  if (typeof value === "string") {
+    const v = value.trim().toLowerCase().replace(/[\s-]+/g, "_");
+    if (VALID_TODO_STATUSES.has(v as SimpleTodoStatus)) return v as SimpleTodoStatus;
+    if (v === "done" || v === "complete") return "completed";
+    if (v === "active" || v === "in_progres" || v === "running" || v === "inprogress") return "in_progress";
+    if (v === "todo" || v === "open" || v === "not_started") return "pending";
+    if (v === "skipped" || v === "canceled") return "cancelled";
+  }
+  return "pending";
+}
+
+/** Coerce a model-supplied priority into a valid SimpleTodoPriority (default "medium"). */
+export function normalizeTodoPriority(value: unknown): SimpleTodoPriority {
+  if (typeof value === "string") {
+    const v = value.trim().toLowerCase();
+    if (VALID_TODO_PRIORITIES.has(v as SimpleTodoPriority)) return v as SimpleTodoPriority;
+    if (v === "urgent" || v === "critical" || v === "blocker") return "high";
+    if (v === "normal" || v === "med") return "medium";
+    if (v === "minor" || v === "nice-to-have") return "low";
+  }
+  return "medium";
+}
 
 export function registerHarnessTools(pi: ExtensionAPI): void {
   pi.registerTool({
@@ -242,8 +288,8 @@ export function registerHarnessTools(pi: ExtensionAPI): void {
     execute: async (_toolCallId, params, _signal, _onUpdate, ctx) => {
       const todos: SimpleTodoItem[] = params.todos.map((t) => ({
         content: t.content,
-        status: t.status as SimpleTodoStatus,
-        priority: t.priority as SimpleTodoPriority,
+        status: normalizeTodoStatus(t.status),
+        priority: normalizeTodoPriority(t.priority),
       }));
 
       setCurrentTodos(todos);
