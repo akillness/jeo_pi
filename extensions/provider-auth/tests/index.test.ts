@@ -69,9 +69,9 @@ describe("providerAuthExtension wiring", () => {
     expect(tencent).toBeTruthy();
     expect(tencent!.config.baseUrl).toBe("https://tokenhub-intl.tencentcloudmaas.com");
     expect(tencent!.config.api).toBe("anthropic-messages");
-    // API-key hub (env-var name), not an OAuth subscription provider.
+    // API-key hub (env-var reference), not an OAuth subscription provider.
     expect(tencent!.config.oauth).toBeUndefined();
-    expect(tencent!.config.apiKey).toBe("TENCENT_API_KEY");
+    expect(tencent!.config.apiKey).toBe("$TENCENT_API_KEY");
     const ids = tencent!.config.models.map((m: any) => m.id);
     expect(ids).toContain("tencent/deepseek-v4-pro");
     expect(ids).toContain("tencent/kimi-k2.6");

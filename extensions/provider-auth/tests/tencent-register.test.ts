@@ -5,6 +5,7 @@ import {
   TENCENT_PROVIDER,
   TENCENT_BASE_URL,
   TENCENT_API_KEY_ENV,
+  TENCENT_API_KEY_REF,
   TENCENT_DEFAULT_MODEL,
   TENCENT_MODEL_IDS,
   TENCENT_MODELS,
@@ -40,13 +41,15 @@ describe("registerTencentProvider", () => {
     expect(config.api).toBe("anthropic-messages");
   });
 
-  it("passes the TENCENT_API_KEY env-var name as the provider apiKey", () => {
+  it("passes the TENCENT_API_KEY env-var reference as the provider apiKey", () => {
     const { pi, providers } = fakePi();
     registerTencentProvider(pi);
-    // pi resolves an env-var name to its value at request time, so the literal
-    // env-var name (not a baked key) is what we register.
-    expect(providers[0].config.apiKey).toBe(TENCENT_API_KEY_ENV);
-    expect(providers[0].config.apiKey).toBe("TENCENT_API_KEY");
+    // pi (@earendil-works) interpolates only "$NAME"/"${NAME}" templates from the
+    // environment; a bare name is treated as a literal key. The registered value
+    // must therefore carry the "$" so the real key is resolved at request time.
+    expect(providers[0].config.apiKey).toBe(TENCENT_API_KEY_REF);
+    expect(providers[0].config.apiKey).toBe("$TENCENT_API_KEY");
+    expect(TENCENT_API_KEY_REF).toBe(`$${TENCENT_API_KEY_ENV}`);
   });
 
   it("is an API-key hub, not an OAuth subscription provider", () => {

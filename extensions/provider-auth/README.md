@@ -154,9 +154,11 @@ All models expose reasoning (at least standard thinking).
 serves many third-party model families over the **Anthropic Messages** wire
 format, so it registers with `api: "anthropic-messages"` — pi's Anthropic client
 posts to `${baseUrl}/v1/messages` with an `x-api-key` header, exactly what
-TokenHub expects. The key is resolved from the `TENCENT_API_KEY` environment
-variable at request time, so the hub surfaces under `/login → "Use an API key"`
-and `/model`; requests succeed once that key is set.
+TokenHub expects. The provider registers its key as the template reference
+`$TENCENT_API_KEY`, which pi interpolates from the `TENCENT_API_KEY` environment
+variable at request time (a bare env-var name would be sent verbatim and
+rejected), so the hub surfaces under `/login → "Use an API key"` and `/model`;
+requests succeed once that key is set (`export TENCENT_API_KEY=sk-…`).
 
 `TENCENT_MODEL_IDS` (`tencent/register.ts`) mirrors `jeo-code`'s verified
 catalogue (`src/ai/providers/openai-compatible-catalog.ts`,

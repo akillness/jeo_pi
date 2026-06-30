@@ -14,7 +14,7 @@
  *                client posts to `${baseUrl}/v1/messages` with an `x-api-key`
  *                header — exactly what TokenHub expects.
  *   - base URL:  https://tokenhub-intl.tencentcloudmaas.com
- *   - api key:   TENCENT_API_KEY (resolved from the environment at request time).
+ *   - api key:   "$TENCENT_API_KEY" (interpolated from the environment at request time).
  *
  * This module is pure with respect to its inputs so it is unit-testable without
  * touching the network or the real ~/.pi directory.
@@ -28,11 +28,21 @@ export const TENCENT_PROVIDER = "tencent";
 export const TENCENT_BASE_URL = "https://tokenhub-intl.tencentcloudmaas.com";
 
 /**
- * Env var name carrying the TokenHub API key. Passed to pi as the provider
- * `apiKey`; pi resolves it from `process.env` at request time, so the real key
- * never has to be baked into the registration.
+ * Env var name carrying the TokenHub API key. The real key never has to be
+ * baked into the registration: pi interpolates the `$`-prefixed reference below
+ * from `process.env` at request time.
  */
 export const TENCENT_API_KEY_ENV = "TENCENT_API_KEY";
+
+/**
+ * The `apiKey` value handed to pi. The current pi runtime
+ * (`@earendil-works/pi-coding-agent`) resolves config values as templates: only
+ * `$NAME` / `${NAME}` tokens are interpolated from the environment, while a bare
+ * string is treated as a literal key. So the reference MUST carry the `$` —
+ * passing the plain env-var name would be sent verbatim as the key and rejected
+ * with `invalid api key` (verified live against TokenHub, 2026-06).
+ */
+export const TENCENT_API_KEY_REF = `$${TENCENT_API_KEY_ENV}`;
 
 /** Canonical default model offered when the hub is selected with no explicit pick. */
 export const TENCENT_DEFAULT_MODEL = "deepseek-v4-pro";
@@ -114,9 +124,10 @@ export function registerTencentProvider(pi: ExtensionAPI): void {
     name: "Tencent Cloud MaaS (TokenHub)",
     baseUrl: TENCENT_BASE_URL,
     api: "anthropic-messages",
-    // pi resolves an env-var name to its value at request time; absent the key,
-    // requests fail with an honest auth error rather than blocking startup.
-    apiKey: TENCENT_API_KEY_ENV,
+    // pi interpolates "$TENCENT_API_KEY" from the environment at request time;
+    // absent the key, requests fail with an honest auth error (not a startup
+    // block). A bare env-var name would be sent literally, so use the $ ref.
+    apiKey: TENCENT_API_KEY_REF,
     models: TENCENT_MODELS,
   });
 }
