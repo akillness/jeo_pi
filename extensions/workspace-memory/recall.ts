@@ -16,6 +16,7 @@ import type { Memory, MemoryIndex, MemoryIndexEntry, MemoryTemplate } from "./ty
 import { loadMemory, saveIndex, setCachedIndex, removeIndexEntry } from "./storage";
 import { recordRecall } from "./scoring";
 import { expandRecallByGraph } from "./okf-bundle";
+import { fuseRankedLists } from "./rrf";
 
 // Maximum memories to inject per turn (selection budget protection)
 const MAX_RECALL_MEMORIES = 5;
@@ -100,14 +101,20 @@ function calculateRelevanceScore(
 		}
 	}
 
-	// Boost by existing recall score (learned relevance)
-	score += entry.score * 0.5;
-
+	// Pure lexical signal only. Learned recall-value is fused separately via RRF
+	// in rankMemoriesByRelevance, so it is no longer double-counted here.
 	return score;
 }
 
 /**
- * Filter and rank memories by relevance to given keywords
+ * Filter and rank memories by relevance to given keywords.
+ *
+ * Candidacy is gated by the lexical signal (a memory must topically match the
+ * query — recency/recall-value alone never injects an irrelevant memory). Among
+ * candidates, ordering fuses two independent rankings via Reciprocal Rank
+ * Fusion (jeo-code's retrieval blend): the lexical-relevance ranking and the
+ * learned recall-value ranking. A memory strong on both rises; a memory strong
+ * on only one still surfaces.
  */
 export function rankMemoriesByRelevance(
 	index: MemoryIndex,
@@ -117,16 +124,35 @@ export function rankMemoriesByRelevance(
 		return [];
 	}
 
-	const scored = index.memories.map((entry) => ({
-		entry,
-		score: calculateRelevanceScore(keywords, entry),
-	}));
+	const scoreById = new Map<string, number>();
+	const candidates: MemoryIndexEntry[] = [];
+	for (const entry of index.memories) {
+		const score = calculateRelevanceScore(keywords, entry);
+		if (score > 0) {
+			scoreById.set(entry.id, score);
+			candidates.push(entry);
+		}
+	}
 
-	// Sort by score descending
-	scored.sort((a, b) => b.score - a.score);
+	if (candidates.length <= 1) {
+		return candidates;
+	}
 
-	// Filter out zero-score memories
-	return scored.filter((s) => s.score > 0).map((s) => s.entry);
+	const lexicalRanking = [...candidates]
+		.sort((a, b) => (scoreById.get(b.id) ?? 0) - (scoreById.get(a.id) ?? 0))
+		.map((e) => e.id);
+	const recallRanking = [...candidates]
+		.sort((a, b) => b.score - a.score)
+		.map((e) => e.id);
+
+	const orderedIds = fuseRankedLists(
+		candidates.map((e) => e.id),
+		[lexicalRanking, recallRanking],
+		(id) => scoreById.get(id) ?? 0,
+	);
+
+	const byId = new Map(candidates.map((e) => [e.id, e] as const));
+	return orderedIds.map((id) => byId.get(id)!).filter(Boolean);
 }
 
 /**

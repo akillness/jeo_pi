@@ -8,10 +8,12 @@
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
+import { completeSimple } from "@mariozechner/pi-ai";
 import { getCachedIndex, setCachedIndex, saveIndex } from "./storage";
 import { detectKeywords, selectTemplateFromKeywords, TEMPLATE_LABELS } from "./templates";
 import { recallMemories } from "./recall";
 import { createAndSaveMemory } from "./save";
+import { distillSession, type DistillComplete } from "./distill";
 import { handleMemoryCommand } from "./commands";
 
 export default function workspaceMemoryExtension(pi: ExtensionAPI) {
@@ -24,6 +26,53 @@ export default function workspaceMemoryExtension(pi: ExtensionAPI) {
 			ctx.ui.setStatus("memory", undefined);
 		}
 	});
+	// Most-recent agent-loop transcript per workspace, captured on `agent_end`
+	// and distilled on `session_shutdown` (true session end). `session_shutdown`
+	// itself carries no messages, so we stash them here.
+	const latestMessages = new Map<string, { role?: string; content?: unknown; isError?: boolean }[]>();
+
+	// --- Agent loop end: capture transcript for end-of-session distillation ---
+	pi.on("agent_end", async (event, ctx) => {
+		if (Array.isArray(event.messages) && event.messages.length > 0) {
+			latestMessages.set(ctx.cwd, event.messages);
+		}
+	});
+
+	// --- Session shutdown: distill captured transcript into durable memories ---
+	// Mirrors jeo-code's session-exit distill: accumulated learnings are filed
+	// even if the model never called `memory_save` mid-session. Bounded by an
+	// abort timeout so it can never hang `/exit`.
+	pi.on("session_shutdown", async (_event, ctx) => {
+		const messages = latestMessages.get(ctx.cwd);
+		if (!messages || messages.length === 0) return;
+		const model = ctx.model;
+		if (!model) return;
+
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 8000);
+		const complete: DistillComplete = async (context) => {
+			const res = await completeSimple(model, context, { signal: controller.signal });
+			const blocks = (res?.content ?? []) as { type?: string; text?: string }[];
+			return blocks
+				.filter((b) => b.type === "text" && typeof b.text === "string")
+				.map((b) => b.text as string)
+				.join("\n");
+		};
+
+		try {
+			const result = await distillSession({ messages, cwd: ctx.cwd, complete });
+			if (result.saved > 0 && ctx.hasUI) {
+				const index = getCachedIndex(ctx.cwd);
+				ctx.ui.setStatus("memory", `💾 ${index.memories.length} (+${result.saved} distilled)`);
+			}
+		} catch {
+			// Distillation is best-effort; never disrupt shutdown.
+		} finally {
+			clearTimeout(timeout);
+			latestMessages.delete(ctx.cwd);
+		}
+	});
+
 
 	// --- Before agent start: keyword detection + recall ---
 	pi.on("before_agent_start", async (event, ctx) => {
