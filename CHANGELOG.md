@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.26.3](https://github.com/akillness/jeo-pi/compare/v1.26.2...v1.26.3) (2026-06-30)
+
+### Bug Fixes
+
+* **provider-auth:** host-gate Claude OAuth shape so Tencent shares the transport safely ([78ce88a](https://github.com/akillness/jeo-pi/commit/78ce88ae2794b2d1d5cfd052be6a7fbf22e34364))
+
 ## [1.26.2](https://github.com/akillness/jeo-pi/compare/v1.26.1...v1.26.2) (2026-06-30)
 
 ### Bug Fixes
