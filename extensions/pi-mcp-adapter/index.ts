@@ -8,6 +8,14 @@
 //
 // Loaded via package.json `pi.extensions` in place of the upstream entry, so the
 // adapter runs exactly once — through this wrapper.
+//
+// MCP scope decision (vs jeo-code's `src/mcp/`): jeo-code ships a full MCP
+// *server* (JSON-RPC/stdio framing in `server.ts`, capability tools in
+// `tools.ts`) that exposes jeo as a tool provider to external agents. jeo-pi
+// instead *consumes* MCP via the upstream `pi-mcp-adapter` client and owns only
+// the client-side compact rendering here. Exposing jeo-pi's own tools as an MCP
+// server is intentionally out of scope until external-agent interop is a goal;
+// it would be a separate server extension, not a change to this wrapper.
 
 import mcpAdapter from "../../node_modules/pi-mcp-adapter/index.ts";
 // Use the same pi-tui the rest of this repo's extensions depend on; the host
