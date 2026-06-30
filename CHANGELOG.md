@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.27.0](https://github.com/akillness/jeo-pi/compare/v1.26.5...v1.27.0) (2026-06-30)
+
+### Features
+
+* **agentic-harness:** /autopilot autonomous build loop with ratchet brain ([1b115b1](https://github.com/akillness/jeo-pi/commit/1b115b16cdba314544f268f2d4fdd1716a3a8d40))
+* **workspace-memory:** RRF recall fusion + session-end distillation ([372928d](https://github.com/akillness/jeo-pi/commit/372928dde341f1b2d69bea97dcdf4a768cd341ef))
+
+### Documentation
+
+* **pi-mcp-adapter:** record MCP client-vs-server scope decision ([3e3f308](https://github.com/akillness/jeo-pi/commit/3e3f30830d5f5bdf400b1e74462227a42f31207f))
+
 ## [1.26.5](https://github.com/akillness/jeo-pi/compare/v1.26.4...v1.26.5) (2026-06-30)
 
 ### Bug Fixes
