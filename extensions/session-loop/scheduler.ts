@@ -143,7 +143,9 @@ export class JobScheduler {
     }
 
     this.jobs.clear();
-    console.log(`stopAll: Aborted ${stoppedJobs.length} jobs, timers cleared`);
+    if (stoppedJobs.length > 0) {
+      console.log(`stopAll: Aborted ${stoppedJobs.length} jobs, timers cleared`);
+    }
 
     return stoppedJobs;
   }

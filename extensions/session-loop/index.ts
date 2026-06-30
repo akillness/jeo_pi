@@ -3,8 +3,6 @@ import { JobScheduler } from './scheduler.js';
 import { registerLoopCommands } from './commands.js';
 
 export default function sessionLoopExtension(pi: ExtensionAPI) {
-  console.log('Extension loading...');
-
   const scheduler = new JobScheduler(
     async (prompt, _signal) => {
       pi.sendUserMessage(prompt, { deliverAs: 'followUp' });
@@ -31,5 +29,4 @@ export default function sessionLoopExtension(pi: ExtensionAPI) {
     }
   });
 
-  console.log('Extension loaded: /loop, /loop-stop, /loop-list, /loop-stop-all');
 }
