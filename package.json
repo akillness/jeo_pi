@@ -11,7 +11,8 @@
   "scripts": {
     "test": "vitest run extensions/",
     "test:watch": "vitest extensions/",
-    "typecheck": "tsc -p extensions/agentic-harness/tsconfig.json --noEmit"
+    "typecheck": "tsc -p extensions/agentic-harness/tsconfig.json --noEmit",
+    "changelog:sync": "node scripts/sync-readme-changelog.mjs"
   },
   "pi": {
     "extensions": [
@@ -46,6 +47,7 @@
   ],
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.6",
     "@types/turndown": "^5.0.6",

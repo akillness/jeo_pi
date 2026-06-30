@@ -43,6 +43,14 @@ export default {
       },
     ],
     [
+      // After CHANGELOG.md is regenerated, mirror the latest 5 releases into
+      // README.md so the README window never drifts from the canonical changelog.
+      "@semantic-release/exec",
+      {
+        prepareCmd: "node scripts/sync-readme-changelog.mjs",
+      },
+    ],
+    [
       "@semantic-release/npm",
       {
         npmPublish: false,
@@ -63,6 +71,7 @@ export default {
           "package.json",
           "extensions/agentic-harness/package.json",
           "CHANGELOG.md",
+          "README.md",
         ],
         message: "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}",
       },
