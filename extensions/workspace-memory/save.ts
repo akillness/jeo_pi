@@ -15,6 +15,7 @@ import {
 import { parseMemoryContent, getSummary, normalizeTemplate } from "./utils";
 import { detectKeywords, selectTemplateFromKeywords } from "./templates";
 import { recalculateAllScores, evictIfNeeded } from "./scoring";
+import { mirrorMemory, removeMemoryConcept } from "./okf-bundle";
 
 export interface CreateMemoryInput {
 	content: string;
@@ -92,6 +93,17 @@ export function createAndSaveMemory(
 	// Delete evicted files after index is saved
 	for (const mem of evicted) {
 		deleteMemoryFile(mem.id, cwd);
+	}
+
+	// Mirror the new memory into the OKF knowledge bundle (additive, durable).
+	// Failures here must never break the operational JSON store.
+	try {
+		mirrorMemory(memory, summary, cwd);
+		for (const mem of evicted) {
+			removeMemoryConcept(mem.id, cwd);
+		}
+	} catch {
+		// Bundle mirror is best-effort; the JSON store remains authoritative.
 	}
 
 	return {

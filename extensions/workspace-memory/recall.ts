@@ -6,11 +6,16 @@
  * 2. Local keyword filter (zero token cost)
  * 3. Score-based ranking (local computation)
  * 4. Load full content for top-K memories only
+ * 5. Fill any spare injection slots with 1-hop OKF concept-graph neighbours of
+ *    the lexical hits (jeo-code's concept-graph recall channel; see okf-bundle's
+ *    expandRecallByGraph). Bounded to spare slots so it never crowds out a
+ *    lexical hit, and dormant until memories cross-link.
  */
 
 import type { Memory, MemoryIndex, MemoryIndexEntry, MemoryTemplate } from "./types";
 import { loadMemory, saveIndex, setCachedIndex, removeIndexEntry } from "./storage";
 import { recordRecall } from "./scoring";
+import { expandRecallByGraph } from "./okf-bundle";
 
 // Maximum memories to inject per turn (selection budget protection)
 const MAX_RECALL_MEMORIES = 5;
@@ -291,6 +296,21 @@ export async function recallMemories(
 	if (hasOrphan) {
 		saveIndex(index, cwd);
 		setCachedIndex(cwd, index);
+	}
+
+	// Graph expansion: pull 1-hop OKF concept-graph neighbours of the lexical
+	// hits into any spare injection slots (jeo-code's concept-graph recall
+	// channel). Dormant until memories cross-link, and bounded to spare slots so
+	// it never crowds out a lexical hit.
+	const spare = MAX_RECALL_MEMORIES - memories.length;
+	if (spare > 0 && recalledIds.length > 0) {
+		for (const neighborId of expandRecallByGraph(recalledIds, cwd, spare)) {
+			const mem = loadMemory(neighborId, cwd);
+			if (mem) {
+				memories.push(mem);
+				recalledIds.push(neighborId);
+			}
+		}
 	}
 
 	return {

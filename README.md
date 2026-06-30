@@ -406,13 +406,18 @@ Configuration reads standard MCP files automatically: `~/.config/mcp/mcp.json`, 
 
 Workspace memory stores important findings as structured records under pi's agent directory, scoped by workspace. It recalls relevant records into future sessions automatically.
 
+Each saved memory is additionally mirrored into a human-, git-, and graphify-readable **OKF (Open Knowledge Format) v0.1** knowledge bundle at `.jeo/memory/` — one concept document per memory, plus a progressive-disclosure `index.md` and an ISO-8601 `log.md`. The JSON store stays the operational source of truth; the bundle is an additive, durable knowledge layer. Set `JEO_NO_MEMORY=1` to disable persistence and the mirror entirely.
+
+Recall is keyword-ranked over the lightweight index, then — when injection slots remain — expanded one hop along the bundle's concept cross-link graph, so a memory the query directly hits can pull in the neighbours it links to. The expansion is dormant until memories cross-link and never crowds out a lexical hit.
+
 ```text
-/memory list           List all memories
-/memory show <id>      Show a specific memory
-/memory save <text>    Save a new memory
-/memory delete <id>    Delete a memory
-/memory search <query> Search memories
-/memory stats          Show memory statistics
+/memory list             List all memories
+/memory show <id>        Show a specific memory
+/memory save <text>      Save a new memory
+/memory delete <id>      Delete a memory
+/memory search <query>   Search memories
+/memory stats            Show memory statistics
+/memory okf [lint|rebuild]  Lint or rebuild the OKF knowledge bundle
 ```
 
 The LLM-callable `memory_save` tool is used after bug fixes, decisions, or useful discoveries — so the agent avoids repeating the same fixes.

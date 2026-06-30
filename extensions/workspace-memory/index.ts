@@ -126,7 +126,7 @@ export default function workspaceMemoryExtension(pi: ExtensionAPI) {
 	// --- Commands ---
 	pi.registerCommand("memory", {
 		description:
-			"Workspace memory commands. Usage: /memory list | show <id> | save <text> | delete <id> | search <query> | stats",
+			"Workspace memory commands. Usage: /memory list | show <id> | save <text> | delete <id> | search <query> | stats | okf [lint|rebuild]",
 		handler: handleMemoryCommand,
 	});
 }

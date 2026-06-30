@@ -15,6 +15,7 @@ import { formatMemoryTable } from "./utils";
 import { extractKeywords } from "./recall";
 import { createAndSaveMemory } from "./save";
 import { getMemoryStats } from "./scoring";
+import { removeMemoryConcept, rebuildIndex, lintBundle, getBundleDir } from "./okf-bundle";
 
 export async function handleMemoryCommand(
 	args: string,
@@ -93,6 +94,7 @@ export async function handleMemoryCommand(
 			}
 			deleteMemoryFile(entry.id, cwd);
 			removeIndexEntry(index, entry.id);
+			removeMemoryConcept(entry.id, cwd);
 			saveIndex(index, cwd);
 			setCachedIndex(cwd, index);
 			ctx.ui.notify(`Deleted memory: ${entry.id}`, "info");
@@ -132,9 +134,32 @@ export async function handleMemoryCommand(
 			ctx.ui.notify(lines.join("\n"), "info");
 			break;
 		}
+		case "okf": {
+			const action = parts[1] || "lint";
+			if (action === "rebuild") {
+				rebuildIndex(cwd);
+				ctx.ui.notify(`Rebuilt OKF bundle index at ${getBundleDir(cwd)}/index.md`, "info");
+				break;
+			}
+			const report = lintBundle(cwd);
+			const c = report.conformance;
+			const errors = c.issues.filter((i) => i.level === "error");
+			const warnings = c.issues.filter((i) => i.level === "warning");
+			const lines = [
+				`OKF bundle: ${getBundleDir(cwd)}`,
+				`Conformant: ${c.conformant ? "yes" : "no"} (${errors.length} errors, ${warnings.length} warnings)`,
+				...errors.slice(0, 10).map((i) => `  ✗ ${i.path}: ${i.message}`),
+				...warnings.slice(0, 10).map((i) => `  ⚠ ${i.path}: ${i.message}`),
+				`Orphans: ${report.graph.orphans.length}`,
+				`Broken links: ${report.graph.brokenLinks.length}`,
+				`Duplicate titles: ${report.graph.duplicates.length}`,
+			];
+			ctx.ui.notify(lines.join("\n"), c.conformant ? "info" : "warning");
+			break;
+		}
 
 		default: {
-			ctx.ui.notify("Unknown subcommand. Usage: /memory list | show <id> | save <text> | delete <id> | search <query> | stats", "warning");
+			ctx.ui.notify("Unknown subcommand. Usage: /memory list | show <id> | save <text> | delete <id> | search <query> | stats | okf [lint|rebuild]", "warning");
 		}
 	}
 }

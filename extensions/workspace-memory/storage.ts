@@ -11,12 +11,18 @@ import type { Memory, MemoryIndex, MemoryIndexEntry } from "./types";
 const MEMORY_DIR_NAME = "memory";
 const INDEX_FILE = "index.json";
 const CURRENT_INDEX_VERSION = 1;
-const DEFAULT_INDEX: MemoryIndex = {
-	version: CURRENT_INDEX_VERSION,
-	workspace: "",
-	lastUpdated: new Date().toISOString(),
-	memories: [],
-};
+/** Build a fresh empty index. Returns a NEW object with its OWN `memories`
+ *  array every call — never share a module-level array, or distinct workspaces
+ *  that both start empty would alias the same list and leak entries across
+ *  workspaces in-process. */
+function createDefaultIndex(cwd: string): MemoryIndex {
+	return {
+		version: CURRENT_INDEX_VERSION,
+		workspace: cwd,
+		lastUpdated: new Date().toISOString(),
+		memories: [],
+	};
+}
 
 const VALID_ID_REGEX = /^mem-\d+-[a-z0-9]+$/;
 
@@ -80,7 +86,7 @@ export function loadIndex(cwd: string): MemoryIndex {
 	const indexPath = join(dir, INDEX_FILE);
 
 	if (!existsSync(indexPath)) {
-		return { ...DEFAULT_INDEX, workspace: cwd };
+		return createDefaultIndex(cwd);
 	}
 
 	try {
@@ -88,11 +94,11 @@ export function loadIndex(cwd: string): MemoryIndex {
 		const parsed = JSON.parse(raw) as MemoryIndex;
 		// Validate basic structure
 		if (!parsed.memories || !Array.isArray(parsed.memories)) {
-			return { ...DEFAULT_INDEX, workspace: cwd };
+			return createDefaultIndex(cwd);
 		}
 		return parsed;
 	} catch {
-		return { ...DEFAULT_INDEX, workspace: cwd };
+		return createDefaultIndex(cwd);
 	}
 }
 
