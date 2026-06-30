@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.21.2](https://github.com/akillness/jeo-pi/compare/v1.21.1...v1.21.2) (2026-06-30)
+
+### Bug Fixes
+
+* **footer:** replace width-2/astral plain icons that garble the powerline footer ([fc0501e](https://github.com/akillness/jeo-pi/commit/fc0501e5f6d1c75cfda882dade03aba3800ddf98))
+
 ## [1.21.1](https://github.com/akillness/jeo-pi/compare/v1.21.0...v1.21.1) (2026-06-30)
 
 ### Reverts
