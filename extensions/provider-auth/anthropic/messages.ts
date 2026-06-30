@@ -32,6 +32,8 @@ export const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
 const CLAUDE_CODE_VERSION = "2.1.63";
 const CLAUDE_CODE_SYSTEM_INSTRUCTION = "You are a Claude agent, built on Anthropic's Claude Agent SDK.";
+/** Newer Claude models (e.g. Opus 4.8) reject a custom `temperature`. */
+const DEPRECATED_TEMPERATURE = "`temperature` is deprecated for this model.";
 
 /** Betas for API-key requests: interleaved-thinking enables thinking+tools. */
 const ANTHROPIC_API_KEY_BETA = ["interleaved-thinking-2025-05-14", "prompt-caching-scope-2026-01-05"];
@@ -292,6 +294,8 @@ export interface AnthropicRequestInput {
   stripArtifacts?: boolean;
   /** Fail-safe retry: force plain budget thinking (no adaptive / output_config effort). */
   forceBudgetThinking?: boolean;
+  /** Fail-safe retry: drop a `temperature` the model deprecated (HTTP 400). */
+  dropTemperature?: boolean;
 }
 
 /** Build the Anthropic `/v1/messages` request. Pure. */
@@ -341,7 +345,7 @@ export function buildAnthropicRequest(input: AnthropicRequestInput): {
       payload.thinking = { type: "enabled", budget_tokens: thinkingBudget, display: "summarized" };
       if (thinkingMode === "budget-effort") payload.output_config = { effort: anthropicAdaptiveEffort(effort) };
     }
-  } else if (input.temperature !== undefined) {
+  } else if (input.temperature !== undefined && !input.dropTemperature) {
     payload.temperature = input.temperature;
   }
   if (input.tools && input.tools.length > 0) {
@@ -411,6 +415,11 @@ export function headersFor(oauth: boolean, token: string, stream: boolean, model
     "anthropic-version": "2023-06-01",
     "anthropic-beta": anthropicBetaHeader(ANTHROPIC_API_KEY_BETA, model),
   };
+}
+
+/** A 400 rejecting a custom `temperature` the model deprecated (e.g. Opus 4.8). */
+export function isDeprecatedTemperatureError(status: number, detail: string): boolean {
+  return status === 400 && detail.includes(DEPRECATED_TEMPERATURE);
 }
 
 /** A 400 naming thinking/signature/redacted means a replayed artifact was rejected. */
@@ -498,6 +507,12 @@ async function postAnthropic(input: AnthropicRequestInput, signal?: AbortSignal)
   let response = await send({});
   if (response.ok) return response;
   const detail = await response.text().catch(() => "");
+  // Fail-safe: the model deprecated `temperature` → retry once without it.
+  if (isDeprecatedTemperatureError(response.status, detail)) {
+    response = await send({ dropTemperature: true });
+    if (response.ok) return response;
+    throw new Error(`Anthropic request failed (HTTP ${response.status}): ${await response.text().catch(() => "")}`);
+  }
   // Fail-safe: the model rejects the effort/adaptive thinking transport → retry once
   // with plain budget thinking (drops output_config.effort and type:"adaptive").
   if (isEffortUnsupportedError(response.status, detail)) {

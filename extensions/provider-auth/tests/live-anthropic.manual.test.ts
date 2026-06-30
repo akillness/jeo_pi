@@ -210,6 +210,27 @@ describe.skipIf(!enabled)("LIVE Anthropic streamAnthropic (pi runtime path)", ()
     expect(final.stopReason, final.errorMessage ?? "").not.toBe("error");
     expect(textOf(final).toUpperCase()).toContain("PONG");
   }, 60_000);
+
+  it("recovers from the deprecated-temperature 400 on Opus 4.8 (fail-safe retry)", async () => {
+    const access = await freshToken(creds!);
+    // Opus 4.8 rejects a custom temperature with HTTP 400 `temperature is deprecated
+    // for this model.` — postAnthropic must retry once without it instead of erroring.
+    const opus48 = { ...model(), id: "claude-opus-4-8", name: "Claude Opus 4.8" } as Model<"anthropic-messages">;
+    const ctx: Context = {
+      systemPrompt: "You are a terse assistant.",
+      messages: [{ role: "user", content: "Reply with exactly the word: PONG", timestamp: Date.now() }] as any,
+      tools: [],
+    } as Context;
+
+    const stream = streamAnthropic(opus48, ctx, { apiKey: access, maxTokens: 64, temperature: 0.7 });
+    for await (const _ev of stream) void _ev;
+    const final = await stream.result();
+
+    // eslint-disable-next-line no-console
+    console.log("[LIVE stream temp-retry] stop=%s text=%o", final.stopReason, textOf(final));
+    expect(final.stopReason, final.errorMessage ?? "").not.toBe("error");
+    expect(textOf(final).toUpperCase()).toContain("PONG");
+  }, 60_000);
 });
 
 function textOf(msg: { content: any[] }): string {

@@ -108,8 +108,20 @@ live `/v1/messages` endpoint serves; all carry a 200K context window, accept tex
 | `claude-haiku-4-5-20251001` | Claude Haiku 4.5 | yes | 64K |
 | `claude-3-5-sonnet-20241022` | Claude 3.5 Sonnet | no | 8,192 |
 
+The 4.x ids all resolve over the OAuth subscription (live-verified 200). The
+legacy `claude-3-5-sonnet-20241022` is served only on the **`sk-ant-…` API-key
+path** — the Claude Pro/Max OAuth subscription returns HTTP 404 `model:` for it
+(it is not in the Claude Code model set), so pick it only when logged in with an
+API key.
+
 Thinking transport is selected per id by `messages.ts`: opus 4.6+ stream via
-adaptive thinking, 4.5 via budget-effort, older ids via budget.
+adaptive thinking, 4.5 via budget-effort, older ids via budget. Three HTTP-400
+fail-safes in `postAnthropic` keep a request alive instead of erroring: a
+deprecated `temperature` (`isDeprecatedTemperatureError`, e.g. Opus 4.8) retries
+once without it, an unsupported effort/adaptive field
+(`isEffortUnsupportedError`, e.g. Sonnet/Haiku 4.5) retries with plain budget
+thinking, and a rejected replayed reasoning artifact (`isReasoningArtifactError`)
+retries with the artifacts stripped.
 
 ## Antigravity OAuth
 

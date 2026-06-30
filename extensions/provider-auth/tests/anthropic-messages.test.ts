@@ -11,6 +11,7 @@ import {
   isOAuthToken,
   isGenuineAnthropicHost,
   shouldUseOAuthShape,
+  isDeprecatedTemperatureError,
   isEffortUnsupportedError,
   isReasoningArtifactError,
   isThirdPartyUsageError,
@@ -323,6 +324,14 @@ describe("buildAnthropicRequest", () => {
     expect(thinking.temperature).toBeUndefined();
   });
 
+  it("drops temperature on the deprecated-temperature fail-safe retry", () => {
+    const kept = parseBody("claude-opus-4-8", { temperature: 0.5 });
+    expect(kept.temperature).toBe(0.5);
+    const dropped = parseBody("claude-opus-4-8", { temperature: 0.5, dropTemperature: true });
+    expect(dropped.temperature).toBeUndefined();
+  });
+
+
   it("declares tools as native functions with tool_choice auto", () => {
     const body = parseBody("claude-sonnet-4-5", {
       tools: [{ name: "read", description: "Read a file", parameters: { type: "object" } as any }],
@@ -338,6 +347,15 @@ describe("isReasoningArtifactError", () => {
     expect(isReasoningArtifactError(400, "redacted_thinking mismatch")).toBe(true);
     expect(isReasoningArtifactError(400, "some other error")).toBe(false);
     expect(isReasoningArtifactError(401, "thinking")).toBe(false);
+  });
+});
+
+describe("isDeprecatedTemperatureError", () => {
+  it("flags a 400 that rejects a deprecated custom temperature", () => {
+    expect(isDeprecatedTemperatureError(400, "`temperature` is deprecated for this model.")).toBe(true);
+    expect(isDeprecatedTemperatureError(400, "This model does not support the effort parameter.")).toBe(false);
+    expect(isDeprecatedTemperatureError(400, "invalid signature for thinking block")).toBe(false);
+    expect(isDeprecatedTemperatureError(429, "`temperature` is deprecated for this model.")).toBe(false);
   });
 });
 
