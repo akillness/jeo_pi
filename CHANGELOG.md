@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.26.5](https://github.com/akillness/jeo-pi/compare/v1.26.4...v1.26.5) (2026-06-30)
+
+### Bug Fixes
+
+* **provider-auth:** close the bare tool_use 400 for thinking-enabled Claude ([9832eff](https://github.com/akillness/jeo-pi/commit/9832eff97c446c7c28517603f91eaec97a1b257a))
+
 ## [1.26.4](https://github.com/akillness/jeo-pi/compare/v1.26.3...v1.26.4) (2026-06-30)
 
 ### Bug Fixes
