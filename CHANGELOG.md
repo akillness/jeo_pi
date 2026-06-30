@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.26.4](https://github.com/akillness/jeo-pi/compare/v1.26.3...v1.26.4) (2026-06-30)
+
+### Bug Fixes
+
+* **provider-auth:** port jeo-code's deprecated-temperature 400 fail-safe for Claude ([4e67749](https://github.com/akillness/jeo-pi/commit/4e67749afd19a9d08f7fb598be195c046804ee0b))
+
 ## [1.26.3](https://github.com/akillness/jeo-pi/compare/v1.26.2...v1.26.3) (2026-06-30)
 
 ### Bug Fixes
