@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.20.3](https://github.com/akillness/jeo-pi/compare/v1.20.2...v1.20.3) (2026-06-30)
+
+### Bug Fixes
+
+* **session-loop:** silence startup/shutdown debug logs ([20064ad](https://github.com/akillness/jeo-pi/commit/20064adda26a0c5d9f1ff728335551aef4a7bff1))
+
 ## [1.20.2](https://github.com/akillness/jeo-pi/compare/v1.20.1...v1.20.2) (2026-06-29)
 
 ### Bug Fixes

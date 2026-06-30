@@ -1,6 +1,6 @@
 {
   "name": "pi-agentic-harness",
-  "version": "1.20.2",
+  "version": "1.20.3",
   "description": "Agentic harness commands for clarification, durable goals, subagents, and verification.",
   "type": "module",
   "scripts": {
