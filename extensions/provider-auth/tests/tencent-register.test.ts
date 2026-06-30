@@ -67,7 +67,9 @@ describe("registerTencentProvider", () => {
     expect(models.length).toBe(TENCENT_MODEL_IDS.length);
     for (const m of models) {
       expect(typeof m.id).toBe("string");
-      expect(m.id.startsWith("tencent/")).toBe(true);
+      // Bare TokenHub wire id — pi sends model.id verbatim, so no provider prefix.
+      expect(m.id.includes("/")).toBe(false);
+      expect(TENCENT_MODEL_IDS.map((e) => e.id)).toContain(m.id);
       expect(typeof m.name).toBe("string");
       expect(typeof m.reasoning).toBe("boolean");
       expect(Array.isArray(m.input)).toBe(true);
@@ -91,9 +93,9 @@ describe("registerTencentProvider", () => {
 });
 
 describe("toTencentModel", () => {
-  it("namespaces the id and marks text-only models with thinking enabled", () => {
+  it("uses the bare wire id and marks text-only models with thinking enabled", () => {
     const m = toTencentModel({ id: "deepseek-v4-pro" });
-    expect(m.id).toBe("tencent/deepseek-v4-pro");
+    expect(m.id).toBe("deepseek-v4-pro");
     expect(m.name).toBe("deepseek-v4-pro (Tencent)");
     expect(m.reasoning).toBe(true);
     expect(m.input).toEqual(["text"]);
@@ -111,6 +113,6 @@ describe("toTencentModel", () => {
 
   it("only the glm-5v vision member declares image input across the full hub", () => {
     const visionModels = TENCENT_MODELS.filter((m) => m.input.includes("image"));
-    expect(visionModels.map((m) => m.id)).toEqual(["tencent/glm-5v-turbo"]);
+    expect(visionModels.map((m) => m.id)).toEqual(["glm-5v-turbo"]);
   });
 });

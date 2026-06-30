@@ -93,14 +93,19 @@ export interface TencentModel {
 /**
  * Derive the pi ProviderModelConfig fields for a TokenHub model id, applying the
  * same capability rules jeo-code's catalogue uses (128K context · 8K output ·
- * thinking on every model · images only on the `glm-5v` vision line). The pi
- * model id is namespaced `tencent/<id>`; pi strips the provider prefix before
- * the request hits the wire.
+ * thinking on every model · images only on the `glm-5v` vision line).
+ *
+ * The `id` is the BARE TokenHub model id (e.g. `minimax-m3`), not namespaced.
+ * The stock `anthropic-messages` transport sends `model.id` verbatim as the
+ * request `model`, and TokenHub only recognises bare ids — a `tencent/`-prefixed
+ * id is rejected with `model '…' not found` (verified live, 2026-06). pi still
+ * scopes the model to this provider via the registration name, so it is selected
+ * as `tencent/<id>` on the CLI while the wire receives `<id>`.
  */
 export function toTencentModel(entry: { id: string; vision?: boolean }): TencentModel {
   const vision = entry.vision === true;
   return {
-    id: `${TENCENT_PROVIDER}/${entry.id}`,
+    id: entry.id,
     name: `${entry.id} (Tencent)`,
     reasoning: true,
     input: vision ? ["text", "image"] : ["text"],

@@ -73,8 +73,8 @@ describe("providerAuthExtension wiring", () => {
     expect(tencent!.config.oauth).toBeUndefined();
     expect(tencent!.config.apiKey).toBe("$TENCENT_API_KEY");
     const ids = tencent!.config.models.map((m: any) => m.id);
-    expect(ids).toContain("tencent/deepseek-v4-pro");
-    expect(ids).toContain("tencent/kimi-k2.6");
+    expect(ids).toContain("deepseek-v4-pro");
+    expect(ids).toContain("kimi-k2.6");
   });
 
 
