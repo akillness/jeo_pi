@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.24.0](https://github.com/akillness/jeo-pi/compare/v1.23.0...v1.24.0) (2026-06-30)
+
+### Features
+
+* **changelog:** mirror latest 5 releases from CHANGELOG.md into README ([aa4633d](https://github.com/akillness/jeo-pi/commit/aa4633d8ed80a41d5ad553cd795b55adc0919aec))
+* **extensions:** add pi-scrollback and tool-flow extensions ([fed65f9](https://github.com/akillness/jeo-pi/commit/fed65f9710ca253721230335b9f4fa0578f5b334))
+
 ## [1.23.0](https://github.com/akillness/jeo-pi/compare/v1.22.0...v1.23.0) (2026-06-30)
 
 ### Features
