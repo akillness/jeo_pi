@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.21.0](https://github.com/akillness/jeo-pi/compare/v1.20.3...v1.21.0) (2026-06-30)
+
+### Features
+
+* **provider-auth:** ANTHROPIC_API_KEY env fallback (jeo-code parity) ([6d94b97](https://github.com/akillness/jeo-pi/commit/6d94b97204aed826a500d2c582696cf4697a48f3))
+
+### Documentation
+
+* **provider-auth:** document Anthropic OAuth third-party-usage 400 limit ([06d8fe1](https://github.com/akillness/jeo-pi/commit/06d8fe1214ef92f02f42df6d563a91ceefca2388))
+
 ## [1.20.3](https://github.com/akillness/jeo-pi/compare/v1.20.2...v1.20.3) (2026-06-30)
 
 ### Bug Fixes
