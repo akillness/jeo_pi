@@ -89,9 +89,15 @@ const ICONS = {
   fps: "󰜴",
 } as const;
 
+// Plain (non-Nerd-Font) glyphs. Every entry MUST be a single BMP code point that
+// the terminal renders at exactly one cell. Astral-plane / emoji-presentation
+// icons (e.g. 📁 U+1F4C1 width-2, ⚡ U+26A1 width-2) make the powerline footer's
+// width budget disagree with the terminal's actual cell count across tmux / SSH /
+// non-emoji terminals, which garbles ("화면이 깨지는") the footer line. Keep this
+// set width-1 BMP only; `tests/footer.test.ts` locks the invariant.
 const ICONS_PLAIN = {
   logo: "π",
-  folder: "📁",
+  folder: "▤",
   branch: "⎇",
   model: "◆",
   thinking: "◇",
@@ -100,7 +106,7 @@ const ICONS_PLAIN = {
   tool: "▶",
   status: "●",
   goal: "◎",
-  fps: "⚡",
+  fps: "↯",
 } as const;
 
 let useNerdIcons = false;

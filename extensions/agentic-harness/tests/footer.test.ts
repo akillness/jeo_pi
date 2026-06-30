@@ -84,6 +84,21 @@ describe("RoachFooter Powerline styling", () => {
     expect(rendered).toContain(ICONS_PLAIN.folder);
   });
 
+  it("keeps every plain icon a single-cell BMP glyph so the footer never garbles on non-emoji terminals", () => {
+    for (const [name, icon] of Object.entries(ICONS_PLAIN)) {
+      const codePoints = Array.from(icon);
+      // Single code point — no ZWJ sequences / combining marks.
+      expect(codePoints.length, `${name} must be one code point`).toBe(1);
+      const cp = codePoints[0].codePointAt(0)!;
+      // BMP only: astral-plane glyphs (📁 U+1F4C1, etc.) are the emoji that
+      // tmux/SSH/legacy terminals mis-measure and corrupt the powerline footer.
+      expect(cp, `${name} (${icon}) must be a BMP code point`).toBeLessThanOrEqual(0xffff);
+      // Exactly one terminal cell wide so the width budget matches the screen.
+      expect(visibleWidth(icon), `${name} (${icon}) must render at width 1`).toBe(1);
+    }
+  });
+
+
   it("renders concrete Nerd Font icons and the Powerline segment separator when opted in", () => {
     expect(Object.values(ICONS).every((icon) => icon.length > 0)).toBe(true);
 
