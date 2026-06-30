@@ -9,6 +9,9 @@
  *                  Pro/Max responds (or "Use an API key" for ANTHROPIC_API_KEY).
  *   - Antigravity: registered here with a Google Cloud Code Assist OAuth block so
  *                  it appears under /login → "Use a subscription" → Google Antigravity.
+ *   - Tencent:     registered here as the Tencent Cloud MaaS hub (TokenHub) so its
+ *                  hosted models (DeepSeek / MiniMax / GLM / Kimi / Hunyuan) surface
+ *                  under /model and authenticate via "Use an API key" (TENCENT_API_KEY).
  *   - Other APIs:  any OpenAI-compatible endpoint in ~/.pi/agent/models.json is
  *                  loaded at startup so it is selectable via /login → "Use an API key"
  *                  and /model.
@@ -21,6 +24,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { getAgentDir } from "@mariozechner/pi-coding-agent";
 import { registerAnthropicProvider } from "./anthropic/register.js";
 import { registerAntigravityProvider } from "./antigravity/register.js";
+import { registerTencentProvider } from "./tencent/register.js";
 import { loadCustomProvidersFromConfig } from "./loader.js";
 
 export default function providerAuthExtension(pi: ExtensionAPI): void {
@@ -31,6 +35,11 @@ export default function providerAuthExtension(pi: ExtensionAPI): void {
   // Register Antigravity so it appears under /login → "Use a subscription"
   // (alongside the Claude provider above).
   registerAntigravityProvider(pi);
+
+  // Register the Tencent Cloud MaaS hub (TokenHub) so its hosted models
+  // (DeepSeek / MiniMax / GLM / Kimi / Hunyuan) surface under /model and
+  // authenticate via /login → "Use an API key" (TENCENT_API_KEY).
+  registerTencentProvider(pi);
 
   // Load any models.json custom providers so they surface under
   // /login → "Use an API key" and /model, without a bespoke command. A

@@ -2,7 +2,7 @@
 
 OAuth subscription login and custom model providers for the pi coding agent.
 
-This extension wires three things into pi's native `/login`:
+This extension wires four things into pi's native `/login`:
 
 1. **Anthropic (Claude)** — a subscription provider that overrides pi's built-in
    Claude OAuth + streaming with `jeo-code`'s proven flow, and replaces pi's
@@ -10,7 +10,11 @@ This extension wires three things into pi's native `/login`:
 2. **Antigravity** — a subscription provider that talks to Google's Cloud Code
    Assist (CCA) backend, with the OAuth flow, scopes, and model catalogue kept
    in parity with `jeo-code`.
-3. **Custom providers** — any OpenAI-compatible endpoints declared in
+3. **Tencent (TokenHub)** — an API-key *hub* provider fronting Tencent Cloud
+   MaaS's international TokenHub, surfacing every hosted model family (DeepSeek,
+   MiniMax, Zhipu GLM, Moonshot Kimi, Tencent Hunyuan) under one `tencent`
+   provider, with the catalogue kept in parity with `jeo-code`.
+4. **Custom providers** — any OpenAI-compatible endpoints declared in
    `~/.pi/agent/models.json` are loaded and registered automatically.
 
 All providers share the same branded sign-in page (see below).
@@ -142,16 +146,46 @@ Capability rules (`toAntigravityModel`) follow jeo-code's catalogue:
 
 All models expose reasoning (at least standard thinking).
 
+## Tencent hub (TokenHub)
+
+`tencent/register.ts` registers the provider name `tencent` as a hosted model
+*hub*. Tencent Cloud MaaS's international TokenHub
+(`https://tokenhub-intl.tencentcloudmaas.com`) is a single API-key endpoint that
+serves many third-party model families over the **Anthropic Messages** wire
+format, so it registers with `api: "anthropic-messages"` — pi's Anthropic client
+posts to `${baseUrl}/v1/messages` with an `x-api-key` header, exactly what
+TokenHub expects. The key is resolved from the `TENCENT_API_KEY` environment
+variable at request time, so the hub surfaces under `/login → "Use an API key"`
+and `/model`; requests succeed once that key is set.
+
+`TENCENT_MODEL_IDS` (`tencent/register.ts`) mirrors `jeo-code`'s verified
+catalogue (`src/ai/providers/openai-compatible-catalog.ts`,
+`src/ai/model-catalog.ts`). TokenHub exposes no `/v1/models` route, so this list
+is the offline source of truth for the hub's picker. All ids carry a 128K context
+window, 8K max output, and expose reasoning; only the GLM vision line accepts
+images:
+
+| Family | Model ids | Images |
+|--------|-----------|--------|
+| DeepSeek | `deepseek-v4-pro`, `deepseek-v4-pro-202606`, `deepseek-v4-flash`, `deepseek-v4-flash-202605`, `deepseek-v3.2` | no |
+| MiniMax | `minimax-m3`, `minimax-m2.7`, `minimax-m2.5` | no |
+| Zhipu GLM | `glm-5.2`, `glm-5.1`, `glm-5`, `glm-5-turbo`, `glm-5v-turbo` | `glm-5v-turbo` only |
+| Moonshot Kimi | `kimi-k2.6`, `kimi-k2.5` | no |
+| Tencent Hunyuan | `hy-mt2-plus` | no |
+
+The default model when the hub is selected is `tencent/deepseek-v4-pro`.
+
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `index.ts` | Registers Anthropic + Antigravity + loads custom providers from `models.json` |
+| `index.ts` | Registers Anthropic + Antigravity + Tencent + loads custom providers from `models.json` |
 | `anthropic/register.ts` | Claude model catalogue + provider registration (OAuth, `streamSimple`) |
 | `anthropic/oauth.ts` | Claude OAuth PKCE flow + rotating-token refresh |
 | `anthropic/messages.ts` | Claude Code `/v1/messages` streaming transport (thinking, tools) |
 | `antigravity/register.ts` | Model catalogue + provider registration (`modifyModels`) |
 | `antigravity/oauth.ts` | OAuth flow + branded callback page serving |
+| `tencent/register.ts` | Tencent TokenHub hub provider registration + hosted model catalogue |
 | `auth-page.ts` | Branded pi 인증 브라우저 page renderer |
 | `loader.ts`, `models-config.ts` | Custom providers from `~/.pi/agent/models.json` |
 
