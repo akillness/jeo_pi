@@ -641,6 +641,31 @@ describe("before_agent_start Event", () => {
     expect(result?.systemPrompt).not.toContain("## Delegation Guards");
     expect(result?.systemPrompt).not.toContain("## Available Subagents");
   });
+  it("applies jeo-pi persona + progress-tracking discipline through the live hook (jeo-code philosophy reflection)", async () => {
+    const { mockPi, events } = createMockPi();
+    extension(mockPi);
+
+    const handlers = events.get("before_agent_start")!;
+    const result = await handlers[0](
+      { type: "before_agent_start", prompt: "test", systemPrompt: "base" },
+      { cwd: "." } as any
+    );
+
+    const prompt = result?.systemPrompt ?? "";
+    // Base prompt is preserved as the prefix, philosophy appended as suffix.
+    expect(prompt.startsWith("base")).toBe(true);
+    // jeo-pi identity + clarify -> plan -> build -> verify loop is reflected at runtime.
+    expect(prompt).toContain("## Identity: jeo-pi");
+    expect(prompt).toMatch(/Clarify/);
+    expect(prompt).toMatch(/Build/);
+    expect(prompt).toMatch(/Verify/);
+    // Completion is gated on a verifier PASS (jeo-code VERIFICATION_DIRECTIVE), not optimism.
+    expect(prompt).toContain("verifier PASS");
+    // Progress-tracking discipline is injected by the wired hook.
+    expect(prompt).toContain("Goal Progress Tracking (NON-NEGOTIABLE)");
+    expect(prompt).toContain("Verifier-gated completion");
+  });
+
 
   it("should not include legacy planning workflow guidance in the root system prompt", async () => {
     const { mockPi, events } = createMockPi();
