@@ -664,6 +664,15 @@ describe("before_agent_start Event", () => {
     // Progress-tracking discipline is injected by the wired hook.
     expect(prompt).toContain("Goal Progress Tracking (NON-NEGOTIABLE)");
     expect(prompt).toContain("Verifier-gated completion");
+    // jeo-code's integrity/verification floor (WORKING_DISCIPLINE + VERIFICATION_DIRECTIVE)
+    // now reaches the top-level interactive agent, not just execution subagents.
+    expect(prompt).toContain("Integrity & Trust");
+    expect(prompt).toContain("Never fabricate tool results or test outcomes");
+    expect(prompt).toContain("Tests must exercise behavior, not tautologies");
+    // ...but the surgical-change (Karpathy) rules stay scoped to subagents so the
+    // top-level agent keeps pi's conversational strengths (not over-forced into jeo-code's flow).
+    expect(prompt).not.toContain("Karpathy Rules");
+    expect(prompt).not.toContain("No Premature Abstraction");
   });
 
 

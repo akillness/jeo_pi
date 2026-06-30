@@ -19,7 +19,7 @@ import { readFile, writeFile, mkdir } from "fs/promises";
 import { microcompactMessages, getCompactionPrompt, formatCompactSummary, buildGoalCompactionSummary, buildClarificationCompactionSummary } from "./compaction.js";
 import { convertToLlm, serializeConversation } from "@mariozechner/pi-coding-agent";
 import { complete } from "@mariozechner/pi-ai";
-import { isDisciplineAgent, augmentAgentWithKarpathy } from "./discipline.js";
+import { isDisciplineAgent, augmentAgentWithKarpathy, INTEGRITY_RULES } from "./discipline.js";
 import { forgePersona } from "./persona.js";
 import {
   extractPlanPathsFromArgs,
@@ -1285,8 +1285,17 @@ Do not start multi-step implementation without a clear understanding of what the
     // workflow phase changes, runtime state, and agent discovery cannot perturb
     // provider prompt-cache keys. Phase-specific instructions are delivered by
     // the command follow-up prompts that start those workflows instead.
+    //
+    // Three deterministic layers reflect jeo-code's runtime philosophy at the
+    // top level: persona (identity/voice/loop), INTEGRITY_RULES (honesty,
+    // verification, safety, untrusted-data — the non-negotiable floor that
+    // jeo-code injects into every interactive turn), and progress tracking
+    // (verifier-gated completion). Surgical-change (Karpathy) rules stay scoped
+    // to execution subagents so the top-level agent keeps pi's conversational
+    // strengths instead of being forced into an executor-only posture.
     return {
-      systemPrompt: forgePersona(event.systemPrompt) + PROGRESS_TRACKING_RULES,
+      systemPrompt:
+        forgePersona(event.systemPrompt) + INTEGRITY_RULES + PROGRESS_TRACKING_RULES,
     };
   });
 
