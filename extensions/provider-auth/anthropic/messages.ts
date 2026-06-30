@@ -232,11 +232,30 @@ function imageContentBlocks(content: Exclude<Message["content"], string> | undef
  */
 export function buildAnthropicMessages(messages: Message[], thinkingEnabled: boolean): AnthropicMessage[] {
   const out: AnthropicMessage[] = [];
+  // Track whether the most recent assistant turn emitted native tool_use blocks.
+  // When thinking is enabled, Anthropic requires every tool_use assistant turn to
+  // begin with its signed thinking block; a turn that lacks one (e.g. produced
+  // while thinking was OFF, then replayed after the user enables thinking) would
+  // send a bare tool_use and be rejected ("Expected `thinking`… found `tool_use`",
+  // HTTP 400). For such turns we degrade to plain text (dropping the unreplayable
+  // tool_use) — matching jeo-code's "no artifact ⇒ no native tool_use" invariant —
+  // and the matching tool_result must degrade in lockstep, else Anthropic 400s on
+  // an orphan tool_result with no preceding tool_use.
+  let lastAssistantNativeTools = false;
   for (const m of messages) {
     if (m.role === "assistant") {
       const calls = toolCalls(m);
       const text = assistantText(m);
       const thinking = thinkingEnabled ? signedThinkingBlocks(m) : [];
+      // Native tool_use is safe when thinking is off (no thinking-block contract) or
+      // when we hold the turn's signed thinking blocks; otherwise degrade to plain text.
+      const canNativizeTools = calls.length > 0 && (!thinkingEnabled || thinking.length > 0);
+      if (calls.length > 0 && !canNativizeTools) {
+        lastAssistantNativeTools = false;
+        out.push({ role: "assistant", content: text || " " });
+        continue;
+      }
+      lastAssistantNativeTools = calls.length > 0;
       if (calls.length === 0 && thinking.length === 0) {
         out.push({ role: "assistant", content: text || " " });
         continue;
@@ -249,6 +268,18 @@ export function buildAnthropicMessages(messages: Message[], thinkingEnabled: boo
     }
     if (m.role === "toolResult") {
       const resultText = m.content.filter((c): c is TextContent => c.type === "text").map((c) => c.text).join("");
+      // If the originating assistant turn was degraded to plain text, its tool_use no
+      // longer exists — fold the result into plain user text (merging consecutive
+      // results) so there is no orphan tool_result and no consecutive user turns.
+      if (!lastAssistantNativeTools) {
+        const prev = out[out.length - 1];
+        if (prev && prev.role === "user" && typeof prev.content === "string") {
+          prev.content = prev.content ? `${prev.content}\n${resultText}` : resultText;
+        } else {
+          out.push({ role: "user", content: resultText || " " });
+        }
+        continue;
+      }
       const block: AnthropicContentBlock = {
         type: "tool_result",
         tool_use_id: m.toolCallId,
@@ -265,6 +296,7 @@ export function buildAnthropicMessages(messages: Message[], thinkingEnabled: boo
       continue;
     }
     // user
+    lastAssistantNativeTools = false;
     if (typeof m.content === "string") {
       out.push({ role: "user", content: m.content });
     } else {
@@ -290,7 +322,8 @@ export interface AnthropicRequestInput {
   reasoning?: ThinkingLevel;
   stream?: boolean;
   baseUrl?: string;
-  /** Fail-safe retry: drop replayed thinking artifacts (plain history). */
+  /** Fail-safe retry: drop replayed thinking artifacts AND disable thinking, so the
+   *  request degrades to plain, thinking-free history (no bare tool_use 400). */
   stripArtifacts?: boolean;
   /** Fail-safe retry: force plain budget thinking (no adaptive / output_config effort). */
   forceBudgetThinking?: boolean;
@@ -307,7 +340,12 @@ export function buildAnthropicRequest(input: AnthropicRequestInput): {
   const model = stripAnthropicPrefix(input.model);
   const stream = input.stream ?? true;
   const maxTokens = input.maxTokens ?? 4000;
-  const effort = input.reasoning;
+  // Fail-safe artifact-strip retry: force the whole request non-thinking. Dropping
+  // only the history thinking blocks while leaving `payload.thinking` enabled would
+  // leave bare tool_use turns (no leading thinking block), which Anthropic rejects
+  // with the SAME 400 — so the strip retry must degrade to a plain, thinking-free
+  // request (history thinking off + no payload.thinking) to actually recover.
+  const effort = input.stripArtifacts ? undefined : input.reasoning;
   const thinkingEnabled = effort !== undefined;
   const thinkingMode = thinkingEnabled
     ? input.forceBudgetThinking

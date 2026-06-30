@@ -200,7 +200,8 @@ describe("buildAnthropicMessages", () => {
       { role: "toolResult", toolCallId: "t1", toolName: "read", content: [{ type: "text", text: "A" }], isError: false, timestamp: 0 },
       { role: "toolResult", toolCallId: "t2", toolName: "read", content: [{ type: "text", text: "B" }], isError: false, timestamp: 0 },
     ];
-    const out = buildAnthropicMessages(msgs, true);
+    // thinking OFF: native tool_use is valid without the thinking-block contract.
+    const out = buildAnthropicMessages(msgs, false);
     expect(out).toHaveLength(2);
     const assistant = out[0].content as any[];
     expect(assistant.filter((b) => b.type === "tool_use").map((b) => b.id)).toEqual(["t1", "t2"]);
@@ -208,6 +209,34 @@ describe("buildAnthropicMessages", () => {
     expect(user).toHaveLength(2);
     expect(user[0]).toMatchObject({ type: "tool_result", tool_use_id: "t1", content: "A", is_error: false });
     expect(user[1]).toMatchObject({ type: "tool_result", tool_use_id: "t2", content: "B" });
+  });
+
+  it("degrades a tool_use turn with no signed thinking to plain text when thinking is enabled (avoids the bare tool_use 400)", () => {
+    const msgs: Message[] = [
+      {
+        role: "assistant",
+        content: [
+          { type: "text", text: "calling" },
+          { type: "toolCall", id: "t1", name: "read", arguments: { path: "a" } },
+          { type: "toolCall", id: "t2", name: "read", arguments: { path: "b" } },
+        ],
+        api: "anthropic-messages",
+        provider: "anthropic",
+        model: "claude-sonnet-4-5",
+        usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+        stopReason: "toolUse",
+        timestamp: 0,
+      },
+      { role: "toolResult", toolCallId: "t1", toolName: "read", content: [{ type: "text", text: "A" }], isError: false, timestamp: 0 },
+      { role: "toolResult", toolCallId: "t2", toolName: "read", content: [{ type: "text", text: "B" }], isError: false, timestamp: 0 },
+    ];
+    // thinking ON but the turn carries no signed thinking block — a bare tool_use
+    // would 400. The turn degrades to plain text and its results fold into one plain
+    // user turn (no orphan tool_result, no consecutive user turns).
+    const out = buildAnthropicMessages(msgs, true);
+    expect(out).toHaveLength(2);
+    expect(out[0]).toEqual({ role: "assistant", content: "calling" });
+    expect(out[1]).toEqual({ role: "user", content: "A\nB" });
   });
 
   it("replays signed thinking blocks only when thinking is enabled", () => {
@@ -329,6 +358,37 @@ describe("buildAnthropicRequest", () => {
     expect(kept.temperature).toBe(0.5);
     const dropped = parseBody("claude-opus-4-8", { temperature: 0.5, dropTemperature: true });
     expect(dropped.temperature).toBeUndefined();
+  });
+
+  it("stripArtifacts disables payload thinking but keeps native tool_use (the artifact-strip retry must recover)", () => {
+    const history: Message[] = [
+      {
+        role: "assistant",
+        content: [
+          { type: "thinking", thinking: "ponder", thinkingSignature: "sig-1" },
+          { type: "toolCall", id: "t1", name: "read", arguments: { path: "a" } },
+        ],
+        api: "anthropic-messages",
+        provider: "anthropic",
+        model: "claude-sonnet-4-5",
+        usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+        stopReason: "toolUse",
+        timestamp: 0,
+      },
+      { role: "toolResult", toolCallId: "t1", toolName: "read", content: [{ type: "text", text: "A" }], isError: false, timestamp: 0 },
+    ];
+    // Normal attempt: thinking on → payload.thinking set, native thinking + tool_use.
+    const normal = parseBody("claude-sonnet-4-5", { reasoning: "low", messages: history });
+    expect(normal.thinking).toBeDefined();
+    expect((normal.messages[0].content as any[]).some((b) => b.type === "thinking")).toBe(true);
+    // Strip retry: payload.thinking is GONE (so a bare/altered thinking history can't
+    // 400 again) while the tool_use/tool_result pairing survives as plain history.
+    const stripped = parseBody("claude-sonnet-4-5", { reasoning: "low", messages: history, stripArtifacts: true });
+    expect(stripped.thinking).toBeUndefined();
+    expect(stripped.output_config).toBeUndefined();
+    expect((stripped.messages[0].content as any[]).some((b) => b.type === "thinking")).toBe(false);
+    expect((stripped.messages[0].content as any[]).some((b) => b.type === "tool_use")).toBe(true);
+    expect((stripped.messages[1].content as any[])[0]).toMatchObject({ type: "tool_result", tool_use_id: "t1" });
   });
 
 

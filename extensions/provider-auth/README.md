@@ -121,7 +121,18 @@ deprecated `temperature` (`isDeprecatedTemperatureError`, e.g. Opus 4.8) retries
 once without it, an unsupported effort/adaptive field
 (`isEffortUnsupportedError`, e.g. Sonnet/Haiku 4.5) retries with plain budget
 thinking, and a rejected replayed reasoning artifact (`isReasoningArtifactError`)
-retries with the artifacts stripped.
+retries with the artifacts stripped — and crucially that strip retry now also
+disables `payload.thinking`, so a `thinking`-enabled request can never bounce on
+the same "bare `tool_use` without a leading thinking block" 400 a second time.
+
+`buildAnthropicMessages` also avoids that 400 on the first attempt: when thinking
+is enabled but an assistant `tool_use` turn carries no signed thinking block
+(e.g. it was produced while thinking was OFF and thinking is then toggled on),
+Anthropic rejects the bare `tool_use` ("Expected `thinking`… found `tool_use`").
+That turn is degraded to plain text (its `tool_use` dropped) and its matching
+`tool_result` folds into plain user text in lockstep, so the message array stays
+valid — jeo-code's "no signed artifact ⇒ no native `tool_use`" invariant. When
+thinking is OFF, native `tool_use`/`tool_result` blocks are always preserved.
 
 ## Antigravity OAuth
 

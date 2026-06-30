@@ -231,6 +231,54 @@ describe.skipIf(!enabled)("LIVE Anthropic streamAnthropic (pi runtime path)", ()
     expect(final.stopReason, final.errorMessage ?? "").not.toBe("error");
     expect(textOf(final).toUpperCase()).toContain("PONG");
   }, 60_000);
+
+  it("avoids the bare tool_use 400 when thinking is enabled over a history with no signed thinking (degrade fail-safe)", async () => {
+    const access = await freshToken(creds!);
+    // Simulates a mid-conversation thinking toggle: the prior assistant tool turn was
+    // produced with thinking OFF (no signed thinking block), then thinking is enabled
+    // for THIS turn. A bare tool_use under `payload.thinking` would 400 ("Expected
+    // `thinking`… found `tool_use`"); buildAnthropicMessages must degrade that turn to
+    // plain text so the live call succeeds. reasoning:"low" keeps payload.thinking ON.
+    const ctx: Context = {
+      messages: [
+        { role: "user", content: "Check the weather in Paris with your tool, then follow its instructions.", timestamp: Date.now() },
+        {
+          role: "assistant",
+          content: [
+            { type: "text", text: "Let me check the weather." },
+            { type: "toolCall", id: "wx-1", name: "get_weather", arguments: { city: "Paris" } },
+          ],
+          api: ANTHROPIC_API,
+          provider: ANTHROPIC_PROVIDER,
+          model: LIVE_MODEL,
+          usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+          stopReason: "toolUse",
+          timestamp: Date.now(),
+        },
+        {
+          role: "toolResult",
+          toolCallId: "wx-1",
+          toolName: "get_weather",
+          content: [{ type: "text", text: "The weather in Paris is sunny, 18°C. Summarize this in one short sentence." }],
+          isError: false,
+          timestamp: Date.now(),
+        },
+      ] as any,
+      tools: [],
+    } as Context;
+
+    const stream = streamAnthropic(model(), ctx, { apiKey: access, maxTokens: 64, reasoning: "low" });
+    for await (const _ev of stream) void _ev;
+    const final = await stream.result();
+
+    // eslint-disable-next-line no-console
+    console.log("[LIVE stream degrade] stop=%s text=%o", final.stopReason, textOf(final));
+    // The invariant under test: NO HTTP 400 (stopReason stays non-error) and the model
+    // produced a real answer — i.e. the bare-tool_use 400 was avoided, not merely retried.
+    expect(final.stopReason, final.errorMessage ?? "").not.toBe("error");
+    expect(textOf(final).length, "model must emit a real response").toBeGreaterThan(0);
+    expect(textOf(final).toLowerCase()).toContain("paris");
+  }, 60_000);
 });
 
 function textOf(msg: { content: any[] }): string {
