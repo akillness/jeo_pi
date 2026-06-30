@@ -14,12 +14,7 @@
  *   - a custom `streamSimple` keyed by the `anthropic-messages` api → the
  *     Claude Code request structure that makes an OAuth subscription actually
  *     respond (identity headers, billing/cloaking metadata, system prelude,
- *     adaptive/budget thinking, native tool blocks, empty-response surfacing), and
- *   - a conditional `apiKey: "ANTHROPIC_API_KEY"` fallback (jeo-code parity with
- *     `src/agent/state.ts`) declared only when that env var is set, so a
- *     usage-billed `sk-ant-api…` key works without `/login` — the reliable path
- *     when the Claude Pro/Max subscription is capped (Anthropic now bills
- *     third-party OAuth usage to a separate, possibly-empty "extra usage" balance).
+ *     adaptive/budget thinking, native tool blocks, empty-response surfacing).
  */
 
 import type { ExtensionAPI, ProviderModelConfig } from "@mariozechner/pi-coding-agent";
@@ -89,26 +84,11 @@ export const ANTHROPIC_MODELS: ProviderModelConfig[] = ANTHROPIC_CATALOG.map((m)
  * OAuth login flow.
  */
 export function registerAnthropicProvider(pi: ExtensionAPI): void {
-  // jeo-code parity (`src/agent/state.ts`): an `sk-ant-api…` key in
-  // ANTHROPIC_API_KEY is a usage-billed credential that bypasses the Claude
-  // Pro/Max subscription. Anthropic now bills THIRD-PARTY OAuth usage against a
-  // separate "extra usage" balance, so a subscription whose extra-usage balance
-  // is empty gets HTTP 400 ("Third-party apps now draw from your extra usage")
-  // on non-trivial requests — the API key is the reliable path around that.
-  //
-  // We only declare the `apiKey` fallback when the env var is actually present:
-  // pi treats a declared apiKey as "configured auth" (and resolves a missing env
-  // var to the literal string), so declaring it unconditionally would make every
-  // Claude model look authenticated and send a bogus key for users who have no
-  // credential at all. Conditioning on the env var keeps the OAuth-only and
-  // no-credential experiences unchanged.
-  const hasEnvApiKey = !!process.env.ANTHROPIC_API_KEY;
   pi.registerProvider(ANTHROPIC_PROVIDER, {
     name: "Anthropic (Claude)",
     baseUrl: ANTHROPIC_BASE_URL,
     api: ANTHROPIC_API,
     models: ANTHROPIC_MODELS,
-    ...(hasEnvApiKey ? { apiKey: "ANTHROPIC_API_KEY" } : {}),
     streamSimple: (model: Model<any>, context: Context, options?: SimpleStreamOptions) =>
       streamAnthropic(model as Model<"anthropic-messages">, context, {
         apiKey: options?.apiKey,

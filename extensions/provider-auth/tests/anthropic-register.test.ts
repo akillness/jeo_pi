@@ -63,32 +63,6 @@ describe("registerAnthropicProvider config", () => {
   });
 });
 
-describe("ANTHROPIC_API_KEY env fallback (jeo-code parity)", () => {
-  const prev = process.env.ANTHROPIC_API_KEY;
-  afterEach(() => {
-    if (prev === undefined) delete process.env.ANTHROPIC_API_KEY;
-    else process.env.ANTHROPIC_API_KEY = prev;
-  });
-
-  it("declares the usage-billed apiKey fallback when ANTHROPIC_API_KEY is set", () => {
-    process.env.ANTHROPIC_API_KEY = "sk-ant-api-xxxxxxxx";
-    const config = captureConfig();
-    // pi resolves this env-var name to the real key and routes the model through
-    // the api-key (x-api-key) path in messages.ts — the path that bypasses the
-    // capped Claude Pro/Max subscription.
-    expect(config.apiKey).toBe("ANTHROPIC_API_KEY");
-    // OAuth stays available alongside the key (subscription is still preferred).
-    expect(config.oauth).toBeTruthy();
-  });
-
-  it("omits apiKey when ANTHROPIC_API_KEY is unset so no bogus key/auth is implied", () => {
-    delete process.env.ANTHROPIC_API_KEY;
-    const config = captureConfig();
-    expect(config.apiKey).toBeUndefined();
-    expect(config.oauth).toBeTruthy();
-  });
-});
-
 describe("/login subscription registry (OAuth) — Claude override", () => {
   beforeEach(() => resetOAuthProviders());
 
