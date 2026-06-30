@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.23.0](https://github.com/akillness/jeo-pi/compare/v1.22.0...v1.23.0) (2026-06-30)
+
+### Features
+
+* **workspace-memory:** wire OKF concept-graph recall + fix cross-workspace index leak ([910bf1b](https://github.com/akillness/jeo-pi/commit/910bf1bcf8bacc91b9c6a6fc5a7c90f548127244))
+
 ## [1.22.0](https://github.com/akillness/jeo-pi/compare/v1.21.2...v1.22.0) (2026-06-30)
 
 ### Features
