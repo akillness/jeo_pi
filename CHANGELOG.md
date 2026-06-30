@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.21.1](https://github.com/akillness/jeo-pi/compare/v1.21.0...v1.21.1) (2026-06-30)
+
+### Reverts
+
+* Revert "feat(provider-auth): ANTHROPIC_API_KEY env fallback (jeo-code parity)" ([e505cd9](https://github.com/akillness/jeo-pi/commit/e505cd9e4c8b6e8a5bda6896a662e4b3fe0c778d))
+
 ## [1.21.0](https://github.com/akillness/jeo-pi/compare/v1.20.3...v1.21.0) (2026-06-30)
 
 ### Features
