@@ -521,6 +521,9 @@ The bundled `pi-code-previews` extension renders syntax-highlighted previews for
 |---|---|
 | `/scrollback` | Open a scrollable, keyboard-driven view of the conversation history (default `alt+s`) |
 | `/copy` | Copy the conversation transcript to the clipboard (`/copy last` = last reply only; default `alt+c`) |
+| `$<skill> [args]` | Invoke a bundled or installed skill by its `$` shorthand — equivalent to `/skill:<skill>` (e.g. `$research`, `$dspy`). Only rewrites when the skill exists; `$$` is a literal escape, so a leading `$` can still be typed |
+
+> Skill text in the TUI is intentionally de-emphasized: the startup `[Skills]` panel and `[Skill conflicts]` notice render in a neutral (dim) tone instead of yellow, so skill listings no longer stand out. Skill **discovery** still autocompletes via `/skill:`; the `$` shorthand is for **invocation** at submit time.
 
 ---
 

@@ -1443,7 +1443,9 @@ export class InteractiveMode {
 					formatPackagePath: (item) => this.getShortPath(item.path, item.sourceInfo),
 				});
 				const skillCompactList = formatCompactList(skills.map((skill) => skill.name));
-				addLoadedSection("Skills", skillCompactList, skillList);
+				// Skill-related listing is de-emphasized (no yellow heading) per
+				// jeo-pi: skill text should not stand out in the TUI startup panel.
+				addLoadedSection("Skills", skillCompactList, skillList, "dim");
 			}
 
 			const templates = this.session.promptTemplates;
@@ -1505,7 +1507,9 @@ export class InteractiveMode {
 			const skillDiagnostics = skillsResult.diagnostics;
 			if (skillDiagnostics.length > 0) {
 				const warningLines = this.formatDiagnostics(skillDiagnostics, sourceInfos);
-				this.chatContainer.addChild(new Text(`${theme.fg("warning", "[Skill conflicts]")}\n${warningLines}`, 0, 0));
+				// De-emphasized (no yellow "warning" color) so skill-related text
+				// does not stand out in the TUI; the conflict list is still shown.
+				this.chatContainer.addChild(new Text(`${theme.fg("dim", "[Skill conflicts]")}\n${warningLines}`, 0, 0));
 				this.chatContainer.addChild(new Spacer(1));
 			}
 
@@ -2538,6 +2542,24 @@ export class InteractiveMode {
 		this.defaultEditor.onSubmit = async (text: string) => {
 			text = text.trim();
 			if (!text) return;
+			// jeo-pi: `$name` is a shorthand for the `/skill:name` invocation.
+			// Rewrite it to the canonical slash form so the existing dispatch
+			// path (history, prompt routing, skill execution) is reused. Only
+			// rewrite when the referenced skill actually exists; otherwise the
+			// text is left untouched so `$` can still be typed literally. `$$`
+			// is treated as a literal escape and never rewritten.
+			if (text.startsWith("$") && !text.startsWith("$$")) {
+				const ref = text.slice(1);
+				const spaceIndex = ref.indexOf(" ");
+				const namePart = spaceIndex === -1 ? ref : ref.slice(0, spaceIndex);
+				const restPart = spaceIndex === -1 ? "" : ref.slice(spaceIndex);
+				if (namePart) {
+					const commandName = namePart.startsWith("skill:") ? namePart : `skill:${namePart}`;
+					if (this.skillCommands.has(commandName)) {
+						text = `/${commandName}${restPart}`;
+					}
+				}
+			}
 
 			// Handle commands
 			if (text === "/settings") {
