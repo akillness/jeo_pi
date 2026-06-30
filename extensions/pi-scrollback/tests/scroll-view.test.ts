@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { clampOffset, ScrollView, wrapToWidth } from "../scroll-view.ts";
+import {
+  clampOffset,
+  ScrollView,
+  SCROLLBACK_OVERLAY,
+  scrollbackViewportHeight,
+  wrapToWidth,
+} from "../scroll-view.ts";
 
 describe("clampOffset", () => {
   it("keeps a valid offset", () => {
@@ -147,5 +153,44 @@ describe("ScrollView keyboard scrolling", () => {
     b.view.render(40);
     b.view.handleInput("q");
     expect(b.onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+/** Mirror pi-tui parseSizeValue("<n>%"). */
+function pct(value: number, ref: number): number {
+  return Math.floor((ref * value) / 100);
+}
+
+describe("scrollbackViewportHeight", () => {
+  it("never lets the rendered overlay exceed the maxHeight clip band", () => {
+    // The TUI clips overlay content to floor(rows * maxHeightPercent / 100);
+    // ScrollView renders viewport + 2 chrome rows, which must fit inside it so
+    // the status/hint footer is never silently clipped away.
+    for (const rows of [24, 30, 40, 41, 50, 60, 64, 100]) {
+      const maxHeight = pct(SCROLLBACK_OVERLAY.maxHeightPercent, rows);
+      const viewport = scrollbackViewportHeight(rows);
+      const view = new ScrollView(Array.from({ length: 500 }, (_, i) => `l${i}`), {
+        title: "T",
+        onClose: () => {},
+        getViewportHeight: () => viewport,
+        requestRender: () => {},
+      });
+      const rendered = view.render(pct(SCROLLBACK_OVERLAY.widthPercent, 100));
+      expect(rendered.length).toBeLessThanOrEqual(maxHeight);
+    }
+  });
+
+  it("leaves room for the footer so End/G can reveal the final line", () => {
+    // Last content line is reachable iff viewport <= visible content rows,
+    // i.e. viewport <= maxHeight - 1 (the footer row stays visible).
+    for (const rows of [24, 41, 50, 64, 100]) {
+      const maxHeight = pct(SCROLLBACK_OVERLAY.maxHeightPercent, rows);
+      expect(scrollbackViewportHeight(rows)).toBeLessThanOrEqual(maxHeight - 1);
+    }
+  });
+
+  it("floors the viewport at 3 rows on a tiny terminal", () => {
+    expect(scrollbackViewportHeight(1)).toBe(3);
+    expect(scrollbackViewportHeight(5)).toBe(3);
   });
 });

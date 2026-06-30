@@ -30,6 +30,35 @@ export interface ScrollViewOptions {
 
 const identity = (s: string): string => s;
 
+/**
+ * Overlay geometry for the `/scrollback` window, shared by the overlay options
+ * and the viewport-height calculation so the two can never drift apart.
+ *
+ * The TUI clips overlay content to `maxHeightPercent` of the terminal rows
+ * (see pi-tui `compositeOverlays` → `render(width).slice(0, maxHeight)`), so the
+ * ScrollView must render at most that many lines. ScrollView spends 2 of them on
+ * its own chrome (the title border row + the status/hint footer row), leaving
+ * `maxHeight - 2` rows for actual content.
+ */
+export const SCROLLBACK_OVERLAY = {
+  widthPercent: 90,
+  maxHeightPercent: 90,
+} as const;
+
+/** Rows ScrollView reserves for its own frame (top border + status footer). */
+const SCROLLBACK_CHROME_ROWS = 2;
+
+/**
+ * Content viewport height for the `/scrollback` overlay on a terminal of
+ * `terminalRows` rows. Derived from the same percentage the overlay is clipped
+ * to, minus ScrollView's own chrome, so the rendered overlay fits the visible
+ * band exactly: no clipped footer, and End/G can always reach the final line.
+ */
+export function scrollbackViewportHeight(terminalRows: number): number {
+  const maxHeight = Math.floor((terminalRows * SCROLLBACK_OVERLAY.maxHeightPercent) / 100);
+  return Math.max(3, maxHeight - SCROLLBACK_CHROME_ROWS);
+}
+
 /** Clamp a scroll offset to the valid `[0, max]` range for the content. */
 export function clampOffset(offset: number, total: number, viewport: number): number {
   const max = Math.max(0, total - viewport);

@@ -16,7 +16,7 @@ import type {
   ExtensionCommandContext,
 } from "@mariozechner/pi-coding-agent";
 import { buildSessionContext, copyToClipboard } from "@mariozechner/pi-coding-agent";
-import { ScrollView } from "./scroll-view.ts";
+import { ScrollView, SCROLLBACK_OVERLAY, scrollbackViewportHeight } from "./scroll-view.ts";
 import {
   buildTranscript,
   lastAssistantMessage,
@@ -98,7 +98,7 @@ async function openScrollback(ctx: ExtensionContext): Promise<void> {
       new ScrollView(lines, {
         title: "Conversation history",
         onClose: () => done(undefined),
-        getViewportHeight: () => Math.max(3, tui.terminal.rows - 6),
+        getViewportHeight: () => scrollbackViewportHeight(tui.terminal.rows),
         requestRender: () => tui.requestRender(),
         styles: {
           border: (s) => theme.fg("dim", s),
@@ -108,7 +108,10 @@ async function openScrollback(ctx: ExtensionContext): Promise<void> {
       }),
     {
       overlay: true,
-      overlayOptions: { width: "90%", maxHeight: "90%" },
+      overlayOptions: {
+        width: `${SCROLLBACK_OVERLAY.widthPercent}%`,
+        maxHeight: `${SCROLLBACK_OVERLAY.maxHeightPercent}%`,
+      },
     },
   );
 }
