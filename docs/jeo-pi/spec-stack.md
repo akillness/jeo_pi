@@ -38,7 +38,36 @@ Interview → Seed → Execute → Evaluate → Evolve
 4. **Evaluate** — never claim done until the verifier returns `PASS`; attach
    evidence with `/goal evidence`. Do not weaken acceptance criteria to pass.
 5. **Evolve** — compare the outcome to the seed, record drift, and run a
-   structured unstuck step on repeated failure instead of blind retries.
+   structured unstuck step on repeated failure instead of blind retries. The
+   Evaluate→Evolve ratchet is also available as an executable loop via
+   `/autopilot` (see below).
+
+## Autopilot ratchet (`/autopilot`)
+
+`autopilot.ts` ports jeo-code's `src/autopilot.ts` "ratchet brain" into a jeo-pi
+command: a frozen evaluator, one change per step, **keep-if-improved /
+revert-otherwise by score**, an append-only evidence ledger, baseline-first
+discipline, and convergence/patience stops. State lives per-cwd under
+`.jeo/autopilot/` (`session.json` frozen contract + `log.jsonl` append-only log).
+
+```text
+/autopilot init <task...> --eval <cmd> [--goal min|max|gate] [--timeout S] [--patience N]
+/autopilot baseline                    # record the starting score (min/max goals)
+/autopilot step --change "<desc>"      # re-run the eval, ratchet keep vs revert
+/autopilot status [--json]             # show the evidence ledger + recommendation
+/autopilot clear --confirm
+```
+
+The agent supplies the mutation between steps; the engine owns only the decision
+and the ledger (never destructive git ops). The eval contract: the command
+prints `score: <number>` (min/max goals) or exits 0/1 (gate goal). The pure
+decision core (`decideStep`, `foldBest`, `bestScoreFromLog`, `isConverged`) is
+runtime-agnostic and unit-tested in `tests/autopilot.test.ts`.
+
+Adaptations vs jeo-code: state root is an explicit argument (testable without
+`chdir`), the evaluator runs behind an injectable seam, writes are atomic
+(`*.tmp → rename`), and the command returns rendered lines for the harness UI
+instead of writing to stdout.
 
 ## Roles
 

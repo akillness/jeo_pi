@@ -59,6 +59,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import type { GitStats, ModelInfo } from "./footer.js";
 import { GOAL_HELP_TEXT, parseGoalCommand } from "./goal-command.js";
+import { runAutopilotCommand } from "./autopilot.js";
 import { renderGoalStatus, renderGoalSummary } from "./goal-render.js";
 import { createGoalState, type GoalCommand, type GoalState } from "./goal-state.js";
 import { defaultGoalStateRoot } from "./goal-storage.js";
@@ -2055,6 +2056,24 @@ Do not start multi-step implementation without a clear understanding of what the
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         notifyGoal(ctx, message, "error");
+      }
+    },
+  });
+
+  pi.registerCommand("autopilot", {
+    description:
+      "Autonomous build loop with autoresearch ratcheting (frozen eval, keep-if-improved/revert)",
+    handler: async (args, ctx) => {
+      const cwd = (ctx as any)?.cwd || process.cwd();
+      const notify = (message: string, level?: "info" | "error" | "warning") => {
+        if (ctx?.ui?.notify) ctx.ui.notify(message, level);
+        else pi.sendUserMessage(message);
+      };
+      try {
+        const result = runAutopilotCommand(args || "", { cwd });
+        notify(result.lines.join("\n"), result.ok ? "info" : "error");
+      } catch (err) {
+        notify(`autopilot: ${(err as Error)?.message ?? String(err)}`, "error");
       }
     },
   });

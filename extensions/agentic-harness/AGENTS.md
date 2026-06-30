@@ -19,6 +19,7 @@ seed.
 | `agents.ts` | Loads agent prompts (`loadAgentsFromDir`, `parseFrontmatter`) |
 | `clarification-*.ts` | `/clarify` loop: state, storage, events, service |
 | `discipline.ts` | Engineering-discipline guardrails surfaced to the agent |
+| `autopilot.ts` | `/autopilot` ratchet engine (frozen eval, keep-if-improved/revert ledger) ported from jeo-code |
 
 ## Subdirectories
 
