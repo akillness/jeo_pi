@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.26.2](https://github.com/akillness/jeo-pi/compare/v1.26.1...v1.26.2) (2026-06-30)
+
+### Bug Fixes
+
+* **provider-auth:** send bare TokenHub model id over the wire ([d782f27](https://github.com/akillness/jeo-pi/commit/d782f278aac0eb779df4d507c8a75d4e0ac431dc))
+
 ## [1.26.1](https://github.com/akillness/jeo-pi/compare/v1.26.0...v1.26.1) (2026-06-30)
 
 ### Bug Fixes
