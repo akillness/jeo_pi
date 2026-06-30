@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.22.0](https://github.com/akillness/jeo-pi/compare/v1.21.2...v1.22.0) (2026-06-30)
+
+### Features
+
+* **harness:** inject jeo-code integrity/verification floor into top-level prompt ([5622ffe](https://github.com/akillness/jeo-pi/commit/5622ffe936090141c99d71262e711c0515e83504))
+
+### Tests
+
+* prove before_agent_start applies jeo-pi persona; drop broken test:core script ([5b28080](https://github.com/akillness/jeo-pi/commit/5b28080ddddc0ebe9a6b82ab38f129ef6cbe1270))
+
 ## [1.21.2](https://github.com/akillness/jeo-pi/compare/v1.21.1...v1.21.2) (2026-06-30)
 
 ### Bug Fixes
