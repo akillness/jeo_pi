@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.25.0](https://github.com/akillness/jeo-pi/compare/v1.24.0...v1.25.0) (2026-06-30)
+
+### Features
+
+* **tui:** $skill shorthand for skill invocation + de-emphasize skill text ([06f1d2c](https://github.com/akillness/jeo-pi/commit/06f1d2c0a90371ecf8d544a3134462d970371a51))
+
 ## [1.24.0](https://github.com/akillness/jeo-pi/compare/v1.23.0...v1.24.0) (2026-06-30)
 
 ### Features
