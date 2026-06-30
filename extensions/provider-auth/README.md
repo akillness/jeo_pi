@@ -50,7 +50,7 @@ built-in Claude provider in the global `/login` registry:
 | Piece | What it does |
 |-------|--------------|
 | `oauth` block | `jeo-code`'s `claude.ai/oauth/authorize` PKCE flow (`anthropic/oauth.ts`), replacing pi's built-in (`platform.claude.com`) login |
-| `streamSimple` (`anthropic-messages` api) | Claude Code request shape that makes an OAuth subscription respond — identity headers, billing/cloaking metadata, system prelude, adaptive/budget thinking, native tool blocks (`anthropic/messages.ts`) |
+| `streamSimple` (`anthropic-messages` api) | Claude Code request shape that makes an OAuth subscription respond — identity headers, billing/cloaking metadata, system prelude, adaptive/budget thinking, native tool blocks (`anthropic/messages.ts`). The OAuth shape is **host-gated**: `shouldUseOAuthShape` only emits it for a Claude `sk-ant-oat` token **on `api.anthropic.com`** (`isGenuineAnthropicHost`), so the transport shared with Tencent never leaks Claude cloaking to a compatible hub |
 | `models` catalogue | Replaces pi's stale built-in Claude list (full replacement) and pins every Claude id to the transport above |
 
 OAuth refresh tokens are **single-use (rotating)**: each refresh returns a new
@@ -159,6 +159,14 @@ TokenHub expects. The provider registers its key as the template reference
 variable at request time (a bare env-var name would be sent verbatim and
 rejected), so the hub surfaces under `/login → "Use an API key"` and `/model`;
 requests succeed once that key is set (`export TENCENT_API_KEY=sk-…`).
+
+Because pi's transport registry keys by the `api` string, Tencent and Anthropic
+**share the one `anthropic-messages` `streamSimple`**. The shared transport is
+host-aware (`shouldUseOAuthShape` / `isGenuineAnthropicHost` in
+`anthropic/messages.ts`): TokenHub always receives the plain `x-api-key` Messages
+shape and **never** the Claude Code OAuth cloaking (Bearer auth, identity/billing
+headers, system prelude) — even if `TENCENT_API_KEY` happens to contain
+`sk-ant-oat`. Tencent declares no `oauth` block, so it is API-key only.
 
 `TENCENT_MODEL_IDS` (`tencent/register.ts`) mirrors `jeo-code`'s verified
 catalogue (`src/ai/providers/openai-compatible-catalog.ts`,

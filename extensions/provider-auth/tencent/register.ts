@@ -15,6 +15,12 @@
  *                header — exactly what TokenHub expects.
  *   - base URL:  https://tokenhub-intl.tencentcloudmaas.com
  *   - api key:   "$TENCENT_API_KEY" (interpolated from the environment at request time).
+ *   - auth mode: API key ONLY. The `anthropic-messages` transport is shared with
+ *                the `anthropic` provider (one global handler per api), but its
+ *                Claude Code OAuth cloaking is host-gated to `api.anthropic.com`
+ *                (see `shouldUseOAuthShape`/`isGenuineAnthropicHost` in
+ *                `../anthropic/messages.ts`), so TokenHub never receives OAuth
+ *                bearer/identity/billing headers — only the plain `x-api-key`.
  *
  * This module is pure with respect to its inputs so it is unit-testable without
  * touching the network or the real ~/.pi directory.

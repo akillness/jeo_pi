@@ -50,6 +50,35 @@ export function isOAuthToken(apiKey: string): boolean {
   return apiKey.includes("sk-ant-oat");
 }
 
+/**
+ * The genuine Anthropic Messages host. The Claude Code OAuth request shape
+ * (Bearer auth + identity/billing headers + system prelude + cloaking metadata)
+ * is only valid here. Anthropic-compatible hubs (e.g. Tencent TokenHub) speak the
+ * same `/v1/messages` wire format but MUST receive the plain `x-api-key` Messages
+ * shape — handing them the Claude Code OAuth cloaking is both wrong and rejected.
+ * A missing baseUrl means the default Anthropic endpoint, so it is genuine.
+ */
+export function isGenuineAnthropicHost(baseUrl: string | undefined): boolean {
+  if (!baseUrl) return true;
+  try {
+    return new URL(baseUrl).host === "api.anthropic.com";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Decide whether to emit the Claude Code OAuth request shape. It requires BOTH a
+ * Claude OAuth access token AND the genuine Anthropic host: a compatible hub
+ * never receives OAuth cloaking even if its api key happens to contain
+ * `sk-ant-oat`, and a Claude subscription token is never bearer-sent to a
+ * third-party host. This is what scopes OAuth to Anthropic while Tencent and
+ * Anthropic share the one `anthropic-messages` transport.
+ */
+export function shouldUseOAuthShape(token: string, baseUrl: string | undefined): boolean {
+  return isOAuthToken(token) && isGenuineAnthropicHost(baseUrl);
+}
+
 export function stripAnthropicPrefix(model: string): string {
   return model.startsWith("anthropic/") ? model.slice("anthropic/".length) : model;
 }
@@ -527,7 +556,9 @@ export function streamAnthropic(
         {
           model: model.id,
           accessToken: token,
-          oauth: isOAuthToken(token),
+          // OAuth cloaking only for a Claude token on the genuine Anthropic host;
+          // a compatible hub (Tencent TokenHub) always gets the plain x-api-key shape.
+          oauth: shouldUseOAuthShape(token, model.baseUrl),
           systemPrompt: context.systemPrompt,
           messages: context.messages,
           tools: context.tools,

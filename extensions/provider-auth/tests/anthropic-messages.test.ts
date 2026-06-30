@@ -9,6 +9,8 @@ import {
   buildAnthropicRequest,
   headersFor,
   isOAuthToken,
+  isGenuineAnthropicHost,
+  shouldUseOAuthShape,
   isEffortUnsupportedError,
   isReasoningArtifactError,
   isThirdPartyUsageError,
@@ -35,6 +37,40 @@ describe("isOAuthToken", () => {
   it("recognises Claude OAuth access tokens, not API keys", () => {
     expect(isOAuthToken(OAUTH_TOKEN)).toBe(true);
     expect(isOAuthToken(API_KEY)).toBe(false);
+  });
+});
+
+const TOKENHUB = "https://tokenhub-intl.tencentcloudmaas.com";
+const ANTHROPIC_HOST = "https://api.anthropic.com";
+
+describe("isGenuineAnthropicHost", () => {
+  it("treats a missing baseUrl as the genuine Anthropic endpoint", () => {
+    expect(isGenuineAnthropicHost(undefined)).toBe(true);
+  });
+  it("recognises the real Anthropic host", () => {
+    expect(isGenuineAnthropicHost(ANTHROPIC_HOST)).toBe(true);
+    expect(isGenuineAnthropicHost("https://api.anthropic.com/")).toBe(true);
+  });
+  it("rejects compatible hubs and look-alikes", () => {
+    expect(isGenuineAnthropicHost(TOKENHUB)).toBe(false);
+    expect(isGenuineAnthropicHost("https://api.anthropic.com.evil.test")).toBe(false);
+    expect(isGenuineAnthropicHost("not a url")).toBe(false);
+  });
+});
+
+describe("shouldUseOAuthShape", () => {
+  it("uses OAuth cloaking only for a Claude token on the genuine Anthropic host", () => {
+    expect(shouldUseOAuthShape(OAUTH_TOKEN, undefined)).toBe(true);
+    expect(shouldUseOAuthShape(OAUTH_TOKEN, ANTHROPIC_HOST)).toBe(true);
+  });
+  it("never sends a Claude OAuth token's cloaking to a compatible hub", () => {
+    // The core "Tencent has no OAuth" guarantee: even an oat-looking key on
+    // TokenHub falls back to the plain x-api-key Messages shape.
+    expect(shouldUseOAuthShape(OAUTH_TOKEN, TOKENHUB)).toBe(false);
+  });
+  it("uses the api-key shape for a non-OAuth key regardless of host", () => {
+    expect(shouldUseOAuthShape(API_KEY, ANTHROPIC_HOST)).toBe(false);
+    expect(shouldUseOAuthShape(API_KEY, TOKENHUB)).toBe(false);
   });
 });
 
