@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.26.1](https://github.com/akillness/jeo-pi/compare/v1.26.0...v1.26.1) (2026-06-30)
+
+### Bug Fixes
+
+* **provider-auth:** resolve Tencent API key via $TENCENT_API_KEY template ref ([159a182](https://github.com/akillness/jeo-pi/commit/159a182b84419a47eff9e262a3129eb9769bde80))
+
 ## [1.26.0](https://github.com/akillness/jeo-pi/compare/v1.25.0...v1.26.0) (2026-06-30)
 
 ### Features
