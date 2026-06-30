@@ -515,6 +515,13 @@ The bundled `pi-code-previews` extension renders syntax-highlighted previews for
 | `/nested-agents` | Toggle nested `AGENTS.md` context widget |
 | `/ask` | Manual smoke test for `ask_user_question` |
 
+### TUI conveniences
+
+| Command | Description |
+|---|---|
+| `/scrollback` | Open a scrollable, keyboard-driven view of the conversation history (default `alt+s`) |
+| `/copy` | Copy the conversation transcript to the clipboard (`/copy last` = last reply only; default `alt+c`) |
+
 ---
 
 ## Tools Reference
@@ -607,6 +614,7 @@ extensions/
   workspace-memory/    # save/recall workspace memory
   pi-mcp-adapter/      # lazy MCP proxy
   pi-code-previews/    # syntax-highlighted tool-call previews (shiki)
+  pi-scrollback/       # scroll conversation history + copy transcript (TUI)
 docs/jeo-pi/           # spec-stack mapping and design notes
 docs/engineering-discipline/
   context/ plans/ reviews/   # Context Briefs, plans, review outputs

@@ -23,7 +23,9 @@
       "node_modules/pi-lsp-client/src/index.ts",
       "extensions/pi-mcp-adapter/index.ts",
       "extensions/pi-code-previews/index.ts",
-      "extensions/provider-auth/index.ts"
+      "extensions/provider-auth/index.ts",
+      "extensions/pi-scrollback/index.ts",
+      "extensions/tool-flow/index.ts"
     ]
   },
   "dependencies": {

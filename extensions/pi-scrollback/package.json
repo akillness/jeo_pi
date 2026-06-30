@@ -1,0 +1,37 @@
+{
+  "name": "pi-scrollback",
+  "version": "0.1.0",
+  "description": "Scroll the conversation history and copy the transcript to the clipboard inside pi's TUI.",
+  "keywords": [
+    "coding-agent",
+    "pi-extension",
+    "pi-package",
+    "scrollback",
+    "clipboard"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "index.ts",
+    "scroll-view.ts",
+    "transcript.ts",
+    "README.md",
+    "tsconfig.json"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-tui": "*"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
