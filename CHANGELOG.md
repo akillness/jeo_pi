@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.30.0](https://github.com/akillness/jeo-pi/compare/v1.29.2...v1.30.0) (2026-07-01)
+
+### Features
+
+* **subagent:** allow PI_HARNESS_ENGINE_BINARY to swap the harness engine binary ([d44f067](https://github.com/akillness/jeo-pi/commit/d44f0673d6099bdc11e172ecc93d30c67a8c117a))
+
+### Documentation
+
+* **agentic-harness:** document tmux worker OMP auth-broker env allowlist ([23d5011](https://github.com/akillness/jeo-pi/commit/23d501100f81dae366dc72c3c3f552b93aa84b50))
+
 ## [1.29.2](https://github.com/akillness/jeo-pi/compare/v1.29.1...v1.29.2) (2026-07-01)
 
 ### Bug Fixes
