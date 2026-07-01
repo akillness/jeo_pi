@@ -606,9 +606,32 @@ interface TeamTmuxCleanupRegistration {
   paneIds: string[];
   sessionName?: string;
   tmuxBinary?: string;
+  /**
+   * ISO timestamp set the moment a team run ends WITHOUT success and its tmux
+   * pane/session is deliberately left alive (not killed) so an operator can
+   * `tmux attach` or send a follow-up command to inspect the failure. Absent
+   * for registrations that are still in-progress or that were cleaned up
+   * immediately (success, abort). See `reapStaleRetainedTeamTmuxResources`.
+   */
+  retainedAt?: string;
 }
 
 const activeTeamTmuxResources = new Set<TeamTmuxCleanupRegistration>();
+
+// How long a failed-run tmux pane/session is kept alive for operator
+// inspection/follow-up before being automatically reaped. Without this bound,
+// every `team` invocation whose backend is tmux and that ends with any failed
+// task (not aborted) leaves its tmux session/panes alive for the rest of the
+// pi process lifetime -- across many `team` invocations in one long-running
+// interactive session this is exactly the slow, steady process/memory growth
+// reported for jeo-pi's `team` workflow. `reapStaleRetainedTeamTmuxResources`
+// reclaims stale entries opportunistically the next time `runTeam` is
+// invoked, so no additional background timer is needed.
+const RETAINED_FAILED_TEAM_TMUX_TTL_MS = 30 * 60 * 1000;
+// Hard cap on retained-but-failed tmux resources regardless of age, so a
+// burst of many failing team runs within the TTL window still cannot grow
+// `activeTeamTmuxResources` without bound.
+const MAX_RETAINED_FAILED_TEAM_TMUX_RESOURCES = 10;
 
 async function cleanupTeamTmuxResources(params: TeamTmuxCleanupRegistration): Promise<void> {
   if (params.backendUsed !== "tmux") return;
@@ -632,6 +655,43 @@ export async function cleanupActiveTeamTmuxResources(): Promise<void> {
   activeTeamTmuxResources.clear();
   await Promise.all(registrations.map((registration) => cleanupTeamTmuxResources(registration)));
 }
+
+/**
+ * Opportunistic GC for retained (failed-run) tmux resources: reaps entries
+ * older than `RETAINED_FAILED_TEAM_TMUX_TTL_MS`, then evicts the oldest
+ * remaining retained entries beyond `MAX_RETAINED_FAILED_TEAM_TMUX_RESOURCES`.
+ * Never touches registrations without `retainedAt` -- those belong to
+ * currently in-progress runs and must only ever be cleaned up via their own
+ * success/abort/session-shutdown path.
+ */
+async function reapStaleRetainedTeamTmuxResources(now: () => string): Promise<void> {
+  const nowMs = Date.parse(now());
+  const retained = Array.from(activeTeamTmuxResources)
+    .filter((registration): registration is TeamTmuxCleanupRegistration & { retainedAt: string } =>
+      typeof registration.retainedAt === "string")
+    .sort((a, b) => Date.parse(a.retainedAt) - Date.parse(b.retainedAt));
+
+  const toReap: TeamTmuxCleanupRegistration[] = [];
+  const kept: TeamTmuxCleanupRegistration[] = [];
+  for (const registration of retained) {
+    const retainedAtMs = Date.parse(registration.retainedAt);
+    const isStale = !Number.isNaN(nowMs) && !Number.isNaN(retainedAtMs)
+      && nowMs - retainedAtMs >= RETAINED_FAILED_TEAM_TMUX_TTL_MS;
+    if (isStale) {
+      toReap.push(registration);
+    } else {
+      kept.push(registration);
+    }
+  }
+  while (kept.length > MAX_RETAINED_FAILED_TEAM_TMUX_RESOURCES) {
+    const oldest = kept.shift();
+    if (oldest) toReap.push(oldest);
+  }
+
+  await Promise.all(toReap.map((registration) => cleanupRegisteredTeamTmuxResources(registration)));
+}
+
+
 
 /**
  * Builds the AbortSignal passed into a single worker's `runtime.runTask`
@@ -794,7 +854,9 @@ export async function runTeam(opts: TeamRunOptions, runtime: TeamRuntime): Promi
     tmuxAvailable: tmuxAvailability.available,
   });
   const now = runtime.now ?? (() => new Date().toISOString());
+  await reapStaleRetainedTeamTmuxResources(now);
   const initialNow = now();
+
   const isResume = !!opts.resumeRunId;
   let record = isResume && runtime.loadRun
     ? normalizeTeamRunRecord(await runtime.loadRun(opts.resumeRunId as string))
@@ -1092,7 +1154,10 @@ export async function runTeam(opts: TeamRunOptions, runtime: TeamRuntime): Promi
       : "failed";
   if (summary.success) {
     await cleanupRegisteredTeamTmuxResources(tmuxCleanupRegistration);
+  } else if (tmuxCleanupRegistration) {
+    tmuxCleanupRegistration.retainedAt = now();
   }
+
   record = recordTeamEvent(record, { type: summary.success ? "run_completed" : "run_failed", createdAt: now() });
   record = setTeamRunStatus(record, finalStatus, now(), summary);
   await persistIfEnabled(runtime, record);

@@ -23,12 +23,17 @@ import {
   scheduleBatches,
 } from "../team.js";
 
-afterEach(() => {
+afterEach(async () => {
+  // Drain any tmux resources a test deliberately left retained (e.g. a
+  // failed-run session kept alive for inspection) so module-level state in
+  // team.ts never leaks across test cases.
+  await cleanupActiveTeamTmuxResources();
   tmuxMock.detectTmux.mockReset().mockResolvedValue({ available: false });
   tmuxMock.createWorkerPanes.mockReset();
   tmuxMock.killTmuxSession.mockReset().mockResolvedValue(undefined);
   tmuxMock.killTmuxPane.mockReset().mockResolvedValue(undefined);
 });
+
 
 function fakeResult(agent: string, task: string, text: string, overrides: Partial<SingleResult> = {}): SingleResult {
   return {
@@ -626,6 +631,175 @@ describe("runTeam", () => {
     expect(tmuxMock.killTmuxPane).toHaveBeenNthCalledWith(2, "%22", undefined, "/usr/bin/tmux");
     expect(tmuxMock.killTmuxSession).not.toHaveBeenCalled();
   }, 250);
+  it("retains a failed detached tmux session for operator inspection instead of killing it immediately", async () => {
+    tmuxMock.detectTmux.mockResolvedValue({ available: true, binary: "/usr/bin/tmux" });
+    tmuxMock.createWorkerPanes.mockResolvedValueOnce([
+      {
+        sessionName: "pi-team-retain-fail",
+        windowName: "workers",
+        paneId: "%51",
+        attachCommand: "tmux attach -t pi-team-retain-fail",
+        logFile: "/tmp/retain-fail/task-1.log",
+        eventLogFile: "/tmp/retain-fail/task-1.events.jsonl",
+      },
+    ]);
+
+    const summary = await runTeam(
+      { goal: "Fail a tmux worker task", workerCount: 1, agent: "worker", runId: "retain-fail" },
+      {
+        now: () => "2026-04-27T00:00:00.000Z",
+        runTask: async ({ task, prompt }) =>
+          fakeResult(task.agent, prompt, "boom", {
+            terminal: task.terminal,
+            exitCode: 1,
+            stopReason: "error",
+            errorMessage: "worker exploded",
+          }),
+      },
+    );
+
+    expect(summary.success).toBe(false);
+    expect(tmuxMock.killTmuxSession).not.toHaveBeenCalled();
+    expect(tmuxMock.killTmuxPane).not.toHaveBeenCalled();
+  });
+
+  it("reaps a stale retained failed-run tmux session on a later runTeam invocation (TTL sweep)", async () => {
+    tmuxMock.detectTmux.mockResolvedValue({ available: true, binary: "/usr/bin/tmux" });
+    tmuxMock.createWorkerPanes.mockResolvedValueOnce([
+      {
+        sessionName: "pi-team-ttl-stale",
+        windowName: "workers",
+        paneId: "%52",
+        attachCommand: "tmux attach -t pi-team-ttl-stale",
+        logFile: "/tmp/ttl-stale/task-1.log",
+        eventLogFile: "/tmp/ttl-stale/task-1.events.jsonl",
+      },
+    ]);
+
+    const failingSummary = await runTeam(
+      { goal: "Fail a tmux worker task", workerCount: 1, agent: "worker", runId: "ttl-stale" },
+      {
+        now: () => "2026-04-27T00:00:00.000Z",
+        runTask: async ({ task, prompt }) =>
+          fakeResult(task.agent, prompt, "boom", {
+            terminal: task.terminal,
+            exitCode: 1,
+            stopReason: "error",
+            errorMessage: "worker exploded",
+          }),
+      },
+    );
+    expect(failingSummary.success).toBe(false);
+    expect(tmuxMock.killTmuxSession).not.toHaveBeenCalled();
+
+    // A later runTeam invocation 31 minutes after the failure must reap the
+    // now-stale retained tmux session as part of its opportunistic sweep --
+    // this is what bounds resource growth across many `team` invocations in
+    // one long-running session instead of leaking until process exit.
+    tmuxMock.detectTmux.mockResolvedValueOnce({ available: false });
+    const nextSummary = await runTeam(
+      { goal: "Unrelated later run", workerCount: 1, agent: "worker", runId: "after-ttl-stale" },
+      {
+        now: () => "2026-04-27T00:31:00.000Z",
+        runTask: async ({ task, prompt }) => fakeResult(task.agent, prompt, "native done", { terminal: task.terminal }),
+      },
+    );
+
+    expect(nextSummary.success).toBe(true);
+    expect(tmuxMock.killTmuxSession).toHaveBeenCalledWith("pi-team-ttl-stale", undefined, "/usr/bin/tmux");
+    expect(tmuxMock.killTmuxPane).not.toHaveBeenCalled();
+  });
+
+  it("does not reap a retained failed-run tmux session before its TTL elapses", async () => {
+    tmuxMock.detectTmux.mockResolvedValue({ available: true, binary: "/usr/bin/tmux" });
+    tmuxMock.createWorkerPanes.mockResolvedValueOnce([
+      {
+        sessionName: "pi-team-not-yet-stale",
+        windowName: "workers",
+        paneId: "%53",
+        attachCommand: "tmux attach -t pi-team-not-yet-stale",
+        logFile: "/tmp/not-yet-stale/task-1.log",
+        eventLogFile: "/tmp/not-yet-stale/task-1.events.jsonl",
+      },
+    ]);
+
+    const failingSummary = await runTeam(
+      { goal: "Fail a tmux worker task", workerCount: 1, agent: "worker", runId: "not-yet-stale" },
+      {
+        now: () => "2026-04-27T00:00:00.000Z",
+        runTask: async ({ task, prompt }) =>
+          fakeResult(task.agent, prompt, "boom", {
+            terminal: task.terminal,
+            exitCode: 1,
+            stopReason: "error",
+            errorMessage: "worker exploded",
+          }),
+      },
+    );
+    expect(failingSummary.success).toBe(false);
+
+    // Only 5 minutes later -- well under the 30-minute TTL -- the retained
+    // session must still be left alive for inspection.
+    tmuxMock.detectTmux.mockResolvedValueOnce({ available: false });
+    const nextSummary = await runTeam(
+      { goal: "Unrelated later run", workerCount: 1, agent: "worker", runId: "after-not-yet-stale" },
+      {
+        now: () => "2026-04-27T00:05:00.000Z",
+        runTask: async ({ task, prompt }) => fakeResult(task.agent, prompt, "native done", { terminal: task.terminal }),
+      },
+    );
+
+    expect(nextSummary.success).toBe(true);
+    expect(tmuxMock.killTmuxSession).not.toHaveBeenCalled();
+    expect(tmuxMock.killTmuxPane).not.toHaveBeenCalled();
+  });
+
+  it("caps retained failed-run tmux sessions, evicting the oldest once the hard limit is exceeded", async () => {
+    tmuxMock.detectTmux.mockResolvedValue({ available: true, binary: "/usr/bin/tmux" });
+    const runFailingTmuxTeam = async (index: number) => {
+      tmuxMock.createWorkerPanes.mockResolvedValueOnce([
+        {
+          sessionName: `pi-team-cap-${index}`,
+          windowName: "workers",
+          paneId: `%${60 + index}`,
+          attachCommand: `tmux attach -t pi-team-cap-${index}`,
+          logFile: `/tmp/cap-${index}/task-1.log`,
+          eventLogFile: `/tmp/cap-${index}/task-1.events.jsonl`,
+        },
+      ]);
+      return runTeam(
+        { goal: `Fail tmux worker ${index}`, workerCount: 1, agent: "worker", runId: `cap-${index}` },
+        {
+          now: () => `2026-04-27T00:${String(index).padStart(2, "0")}:00.000Z`,
+          runTask: async ({ task, prompt }) =>
+            fakeResult(task.agent, prompt, "boom", {
+              terminal: task.terminal,
+              exitCode: 1,
+              stopReason: "error",
+              errorMessage: "worker exploded",
+            }),
+        },
+      );
+    };
+
+    // 12 failing tmux runs in quick succession (well within the 30-minute
+    // TTL). The sweep runs on ENTRY to each runTeam call, before that call's
+    // own registration is added, so it takes a 12th call (seeing the 11
+    // registrations retained by calls 1-11, one more than
+    // MAX_RETAINED_FAILED_TEAM_TMUX_RESOURCES = 10) to observe an eviction.
+    for (let index = 1; index <= 12; index += 1) {
+      const summary = await runFailingTmuxTeam(index);
+      expect(summary.success).toBe(false);
+    }
+
+    // The oldest retained session (cap-1) must have been evicted to enforce
+    // the hard cap; the newest (cap-12) must still be alive/untouched.
+    expect(tmuxMock.killTmuxSession).toHaveBeenCalledWith("pi-team-cap-1", undefined, "/usr/bin/tmux");
+    expect(tmuxMock.killTmuxSession).not.toHaveBeenCalledWith("pi-team-cap-12", undefined, "/usr/bin/tmux");
+
+  });
+
+
 
   it("aborts a hung worker via taskTimeoutMs instead of letting the run hang forever", async () => {
     vi.useFakeTimers();
