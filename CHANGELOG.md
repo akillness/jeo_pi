@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.29.0](https://github.com/akillness/jeo-pi/compare/v1.28.0...v1.29.0) (2026-07-01)
+
+### Features
+
+* **provider-auth:** port jeo-code's Anthropic 5th-gen model parsing (Sonnet 5, Fable 5, Mythos 5) ([4609f07](https://github.com/akillness/jeo-pi/commit/4609f078c4adef9c91eca9791f5edf636a826eee))
+
 ## [1.28.0](https://github.com/akillness/jeo-pi/compare/v1.27.0...v1.28.0) (2026-07-01)
 
 ### Features
