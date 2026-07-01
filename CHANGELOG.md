@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.28.0](https://github.com/akillness/jeo-pi/compare/v1.27.0...v1.28.0) (2026-07-01)
+
+### Features
+
+* **workspace-memory:** failure-first stall capture (jeo-code's core philosophy) ([163f216](https://github.com/akillness/jeo-pi/commit/163f21696439c31a20ede6f88721bf3096d56bdb))
+* **workspace-memory:** ground failure-first memory in real execution results ([846ca1a](https://github.com/akillness/jeo-pi/commit/846ca1ab516fe1f76ed4ea140ae27d30910aae3e))
+
+### Documentation
+
+* **readme:** describe workspace-memory failure-first stall capture ([2e054c1](https://github.com/akillness/jeo-pi/commit/2e054c1181a37a2fc5e210d6824501528a8cf44b))
+* **readme:** sync extension count to 11 (add pi-scrollback, provider-auth, tool-flow) ([a866ddc](https://github.com/akillness/jeo-pi/commit/a866ddcf56607d1cf5272576e8f3fa18dc621e5a))
+
 ## [1.27.0](https://github.com/akillness/jeo-pi/compare/v1.26.5...v1.27.0) (2026-06-30)
 
 ### Features
