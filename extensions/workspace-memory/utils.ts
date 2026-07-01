@@ -54,7 +54,11 @@ export function parseMemoryContent(raw: string, template: MemoryTemplate): Memor
 		const rootCause = extractSection(raw, "Root Cause") ?? "";
 		const fix = extractSection(raw, "Fix") ?? "";
 		const prevention = extractSection(raw, "Prevention") ?? "";
-		return { problem, rootCause, fix, prevention };
+		// Failure-first-only sections (recordFailedAttempt in save.ts): absent on a
+		// normal post-mortem, so they parse to "" and add nothing when rendered.
+		const evidence = extractSection(raw, "Evidence") ?? "";
+		const candidates = extractSection(raw, "Unconfirmed Candidates") ?? "";
+		return { problem, rootCause, fix, prevention, evidence, candidates };
 	}
 	if (template === "decision-record") {
 		const context = extractSection(raw, "Context") ?? raw;

@@ -123,7 +123,18 @@ export interface FailedAttemptInput {
 	steps: number;
 	/** Classification: consecutive_failure | repeat | cycle. */
 	stopClass: string;
+	/** Distinct call signature(s) implicated in the stall — what NOT to repeat.
+	 *  Optional: callers that only have the legacy (task, why, steps, stopClass)
+	 *  shape still work, just without a grounded Fix/Evidence section. */
+	candidates?: string[];
+	/** Real error text from the offending tool result. Empty/omitted if the
+	 *  implicated calls did not report an error. */
+	lastError?: string;
+	/** Distinct successful call signatures confirmed earlier in the same turn,
+	 *  before the stall — kept so the next turn does not re-derive them. */
+	evidence?: string[];
 }
+
 
 export interface RecordFailedAttemptResult {
 	recorded: boolean;
@@ -177,13 +188,40 @@ export function recordFailedAttempt(
 		new Set(task.toLowerCase().match(/[a-z0-9][a-z0-9_-]{3,}/g) ?? [])
 	).slice(0, 8);
 
+	const candidates = input.candidates?.filter(Boolean) ?? [];
+	const evidence = input.evidence?.filter(Boolean) ?? [];
+	const lastError = (input.lastError ?? "").trim();
+
+	// Fix is grounded in the ACTUAL execution result whenever available — what
+	// matters more than call/retry count is whether the failure signal itself
+	// (the real error, the exact call that didn't work) carries into the next
+	// attempt, not just a label that a failure happened.
+	let fix: string;
+	if (lastError) {
+		fix =
+			`Do not repeat ${candidates.length > 0 ? candidates.join(", ") : "the same call"} as-is — ` +
+			`it failed with: ${lastError}. Address that error, or use a different tool/argument set, before retrying.`;
+	} else if (candidates.length > 0) {
+		fix =
+			`Repeating ${candidates.join(", ")} produced no new outcome — it will not resolve the task by ` +
+			`itself. Try a different tool, target, or verification step.`;
+	} else {
+		fix = "Change approach before retrying — try a different decomposition, tool, or verification path.";
+	}
+
 	// Heading-per-line markdown so parseMemoryContent captures each section
-	// (inline `Problem: …` would be swallowed by the heading parser).
+	// (inline `Problem: …` would be swallowed by the heading parser). Evidence /
+	// Unconfirmed Candidates are appended only when the caller supplied them, so
+	// they separate "already confirmed" from "still open" without forcing the
+	// model to re-read the whole transcript to reconstruct that split.
 	const content =
 		`## Problem\n${problem}\n\n` +
 		`## Root Cause\nA prior turn stalled (${input.why}) on this task and could not recover after ${input.steps} tool steps.\n\n` +
-		`## Fix\nChange approach before retrying — try a different decomposition, tool, or verification path.\n\n` +
+		`## Fix\n${fix}\n\n` +
+		(evidence.length > 0 ? `## Evidence\nAlready confirmed earlier in this turn — do not redo:\n${evidence.map((e) => `- ${e}`).join("\n")}\n\n` : "") +
+		(candidates.length > 0 ? `## Unconfirmed Candidates\nTried without resolving the task:\n${candidates.map((c) => `- ${c}`).join("\n")}\n\n` : "") +
 		`## Prevention\nDo NOT repeat the same line of attack on this task.`;
+
 
 	try {
 		const { memory } = createAndSaveMemory(

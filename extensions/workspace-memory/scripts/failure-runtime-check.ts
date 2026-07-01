@@ -11,7 +11,8 @@
  * the temp cwd's `.jeo/memory`). Not a unit test. Run:
  *   npx tsx scripts/failure-runtime-check.ts
  */
-import { mkdtempSync, rmSync, existsSync, readFileSync } from "fs";
+import { mkdtempSync, rmSync, existsSync, readFileSync, readdirSync } from "fs";
+
 import { join } from "path";
 import { tmpdir } from "os";
 
@@ -59,6 +60,27 @@ function failingStep(tool: string, args: Record<string, unknown>) {
 		{ role: "toolResult", toolCallId: id, toolName: tool, isError: true },
 	];
 }
+
+// Same as failingStep, but with real error text on the toolResult content —
+// exercises the grounded Fix/Evidence/Unconfirmed-Candidates extraction added
+// in stall.ts (lastErrorIn / distinctSignatures / priorEvidence), not just the
+// generic stopClass label.
+function failingStepWithError(tool: string, args: Record<string, unknown>, errorText: string) {
+	const id = `tc-${++idSeq}`;
+	return [
+		{ role: "assistant", content: [{ type: "toolCall", id, name: tool, arguments: args }] },
+		{ role: "toolResult", toolCallId: id, toolName: tool, isError: true, content: errorText },
+	];
+}
+
+function okStep(tool: string, args: Record<string, unknown>) {
+	const id = `tc-${++idSeq}`;
+	return [
+		{ role: "assistant", content: [{ type: "toolCall", id, name: tool, arguments: args }] },
+		{ role: "toolResult", toolCallId: id, toolName: tool, isError: false },
+	];
+}
+
 
 function stalledTranscript(task: string, failCount: number) {
 	const messages: any[] = [{ role: "user", content: task }];
@@ -172,6 +194,57 @@ async function main(): Promise<void> {
 			delete process.env.JEO_NO_MEMORY;
 		}
 	});
+
+	// ── Scenario 5: grounded content — real error text + confirmed evidence + ──
+	//    unresolved candidates carry into the injected system prompt (not just
+	//    a generic stopClass label). Verifies the insight that what matters is
+	//    whether the actual execution result is fed into the next attempt.
+	console.log("Scenario 5: grounded Fix/Evidence/Unconfirmed-Candidates in the injected prompt");
+	await withTemp(async (cwd) => {
+		const { mockPi, events } = createMockPi();
+		workspaceMemoryExtension(mockPi);
+		const ctx: any = { cwd, hasUI: true, ui: { setStatus: () => {}, notify: () => {} } };
+
+		const errorText = "ENOENT: no such file or directory, open '/tmp/does-not-exist.json'";
+		const messages: any[] = [
+			{ role: "user", content: "load and parse the config file" },
+			// Confirmed evidence BEFORE the stall: a successful read of a real file.
+			...okStep("read", { file: "config.ts" }),
+			// Then it stalls repeatedly on a bad path, reporting a real error each time.
+			...failingStepWithError("bash", { command: "cat /tmp/does-not-exist.json" }, errorText),
+			...failingStepWithError("bash", { command: "cat /tmp/does-not-exist.json" }, errorText),
+			...failingStepWithError("bash", { command: "cat /tmp/does-not-exist.json" }, errorText),
+			...failingStepWithError("bash", { command: "cat /tmp/does-not-exist.json" }, errorText),
+			...failingStepWithError("bash", { command: "cat /tmp/does-not-exist.json" }, errorText),
+		];
+		await events.get("agent_end")?.[0]?.({ type: "agent_end", messages }, ctx);
+
+		// The durable OKF concept file on disk carries the same grounded sections
+		// (not just the in-memory JSON store / recall-time formatting).
+		const postMortemsDir = join(getBundleDir(cwd), "post-mortems");
+		const conceptFiles = existsSync(postMortemsDir) ? readdirSync(postMortemsDir) : [];
+		check("a post-mortem concept file was written to the OKF bundle", conceptFiles.length === 1, JSON.stringify(conceptFiles));
+		const conceptText = conceptFiles.length > 0 ? readFileSync(join(postMortemsDir, conceptFiles[0]), "utf8") : "";
+		check("the on-disk concept file cites the real error text", conceptText.includes(errorText), conceptText.slice(0, 500));
+		check("the on-disk concept file has an Evidence heading", conceptText.includes("# Evidence"), conceptText.slice(0, 500));
+		check(
+			"the on-disk concept file has an Unconfirmed Candidates heading",
+			conceptText.includes("# Unconfirmed Candidates"),
+			conceptText.slice(0, 500),
+		);
+
+
+		const beforeResult = await events.get("before_agent_start")?.[0]?.(
+			{ type: "before_agent_start", prompt: "back to the config file loading", systemPrompt: "BASE" },
+			ctx,
+		);
+		const prompt: string = beforeResult?.systemPrompt ?? "";
+		check("injected Fix cites the real error text (not a generic label)", prompt.includes(errorText), prompt.slice(0, 500));
+		check("injected content lists the confirmed prior evidence (read: config.ts)", prompt.includes("read:") && prompt.includes("config.ts"), prompt.slice(0, 800));
+		check("injected content lists the unresolved candidate call (bash: bad path)", prompt.includes("bash:") && prompt.includes("does-not-exist.json"), prompt.slice(0, 800));
+		check("Evidence and Unconfirmed Candidates sections are both present", prompt.includes("Evidence:") && prompt.includes("Unconfirmed Candidates:"), prompt.slice(0, 800));
+	});
+
 
 	console.log(failures === 0 ? "\nALL FAILURE-FIRST RUNTIME CHECKS PASSED" : `\n${failures} RUNTIME CHECK(S) FAILED`);
 	rmSync(agentDir, { recursive: true, force: true });

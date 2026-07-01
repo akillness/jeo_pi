@@ -42,6 +42,28 @@ function stepWith(
 	}));
 	return [assistant, ...results];
 }
+// Same as stepWith, but also attaches error-text content on toolResult
+// messages, so tests can exercise the grounded lastError/candidates/evidence
+// extraction (not just the boolean isError classification).
+function stepWithText(
+	calls: { id: string; name: string; args: Record<string, unknown> }[],
+	errors: boolean[],
+	texts: (string | undefined)[]
+): StallMessage[] {
+	const assistant: StallMessage = {
+		role: "assistant",
+		content: calls.map((c) => ({ type: "toolCall", id: c.id, name: c.name, arguments: c.args })),
+	};
+	const results: StallMessage[] = calls.map((c, i) => ({
+		role: "toolResult",
+		toolCallId: c.id,
+		toolName: c.name,
+		isError: errors[i] === true,
+		content: texts[i],
+	}));
+	return [assistant, ...results];
+}
+
 function user(text: string): StallMessage {
 	return { role: "user", content: text };
 }
@@ -173,6 +195,80 @@ describe("detectStall — negatives and scoping", () => {
 		expect(detectStall(msgs)?.task).toBe("port the OKF memory logic");
 	});
 });
+describe("detectStall — grounded diagnostics (candidates/evidence/lastError)", () => {
+	it("consecutive_failure carries the real error text and the failing signature, and keeps prior success as evidence", () => {
+		const msgs: StallMessage[] = [user("load the config")];
+		msgs.push(...step(call("read", { file: "config.ts" }))); // confirmed evidence, before the stall
+		for (let i = 0; i < MAX_FAILURES; i++) {
+			msgs.push(
+				...stepWithText(
+					[call("bash", { command: "cat /tmp/missing.json" })],
+					[true],
+					[`ENOENT: no such file, attempt ${i}`],
+				),
+			);
+		}
+		const stall = detectStall(msgs);
+		expect(stall?.stopClass).toBe("consecutive_failure");
+		expect(stall?.candidates).toEqual(["bash:{\"command\":\"cat /tmp/missing.json\"}"]);
+		// Most recent failure in the run wins (freshest diagnostic).
+		expect(stall?.lastError).toBe(`ENOENT: no such file, attempt ${MAX_FAILURES - 1}`);
+		expect(stall?.evidence).toEqual(["read:{\"file\":\"config.ts\"}"]);
+	});
+
+	it("repeat that succeeds every time has no error text but still names the repeated call", () => {
+		const msgs: StallMessage[] = [user("run the build")];
+		for (let i = 0; i < MAX_REPEAT; i++) {
+			msgs.push(...step(call("bash", { command: "npm run build" })));
+		}
+		const stall = detectStall(msgs);
+		expect(stall?.stopClass).toBe("repeat");
+		expect(stall?.candidates).toEqual(["bash:{\"command\":\"npm run build\"}"]);
+		expect(stall?.lastError).toBe("");
+	});
+
+	it("repeat that fails every time carries the error text of the last occurrence", () => {
+		const msgs: StallMessage[] = [user("fix the flaky test")];
+		for (let i = 0; i < MAX_REPEAT; i++) {
+			msgs.push(...stepWithText([call("bash", { command: "npm test" })], [true], [`exit code 1, run ${i}`]));
+		}
+		const stall = detectStall(msgs);
+		expect(stall?.stopClass).toBe("repeat");
+		expect(stall?.lastError).toBe(`exit code 1, run ${MAX_REPEAT - 1}`);
+	});
+
+	it("cycle lists both distinct signatures as candidates and captures a failure's error text", () => {
+		const msgs: StallMessage[] = [user("investigate the bug")];
+		const a = call("read", { file: "a.ts" });
+		const b = call("bash", { command: "npm test" });
+		for (let i = 0; i < CYCLE_WINDOW; i++) {
+			const c = i % 2 === 0 ? { ...a, id: `c-${i}` } : { ...b, id: `c-${i}` };
+			if (c.name === "bash") {
+				msgs.push(...stepWithText([c], [true], ["test suite failed: 2 tests red"]));
+			} else {
+				msgs.push(...step(c));
+			}
+		}
+		const stall = detectStall(msgs);
+		expect(stall?.stopClass).toBe("cycle");
+		expect(stall?.candidates.length).toBe(2);
+		expect(stall?.candidates).toContain("read:{\"file\":\"a.ts\"}");
+		expect(stall?.candidates).toContain("bash:{\"command\":\"npm test\"}");
+		expect(stall?.lastError).toBe("test suite failed: 2 tests red");
+	});
+
+	it("evidence and candidates are both capped and empty when nothing qualifies", () => {
+		const msgs: StallMessage[] = [user("do work")];
+		for (let i = 0; i < MAX_FAILURES; i++) {
+			msgs.push(...stepWith([call("edit", { n: i })], [true]));
+		}
+		const stall = detectStall(msgs);
+		// No successful steps happened before the failing run, so evidence is empty.
+		expect(stall?.evidence).toEqual([]);
+		expect(stall?.candidates.length).toBeGreaterThan(0);
+	});
+});
+
 
 describe("extractTask", () => {
 	it("returns the last non-empty user prompt, whitespace-collapsed", () => {

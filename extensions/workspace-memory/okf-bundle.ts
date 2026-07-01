@@ -99,11 +99,14 @@ function renderBody(memory: Memory): string {
 		if (value && value.trim()) sections.push(`# ${heading}\n\n${value.trim()}`);
 	};
 	if (template === "post-mortem") {
-		const c = content as { problem: string; rootCause: string; fix: string; prevention: string };
+		const c = content as { problem: string; rootCause: string; fix: string; prevention: string; evidence?: string; candidates?: string };
 		push("Problem", c.problem);
 		push("Root Cause", c.rootCause);
 		push("Fix", c.fix);
+		push("Evidence", c.evidence ?? "");
+		push("Unconfirmed Candidates", c.candidates ?? "");
 		push("Prevention", c.prevention);
+
 	} else if (template === "decision-record") {
 		const c = content as {
 			context: string;

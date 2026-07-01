@@ -46,9 +46,18 @@ export default function workspaceMemoryExtension(pi: ExtensionAPI) {
 			const stall = detectStall(event.messages);
 			if (stall) {
 				const result = recordFailedAttempt(
-					{ task: stall.task, why: stall.why, steps: stall.steps, stopClass: stall.stopClass },
+					{
+						task: stall.task,
+						why: stall.why,
+						steps: stall.steps,
+						stopClass: stall.stopClass,
+						candidates: stall.candidates,
+						lastError: stall.lastError,
+						evidence: stall.evidence,
+					},
 					ctx.cwd
 				);
+
 				if (result.recorded && ctx.hasUI) {
 					const index = getCachedIndex(ctx.cwd);
 					ctx.ui.setStatus("memory", `💾 ${index.memories.length} (⚠ failure recorded)`);

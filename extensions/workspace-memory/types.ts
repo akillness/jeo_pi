@@ -48,7 +48,15 @@ export interface PostMortemContent {
 	rootCause: string;
 	fix: string;
 	prevention: string;
+	/** Distinct successful calls confirmed earlier in the same turn, kept so the
+	 *  next turn does not re-derive them by re-reading the whole transcript.
+	 *  Omitted (or "") for a normal (non-failure-first) post-mortem. */
+	evidence?: string;
+	/** Distinct call signature(s) tried without resolving the task — what NOT to
+	 *  repeat. Omitted (or "") for a normal (non-failure-first) post-mortem. */
+	candidates?: string;
 }
+
 
 export interface DecisionRecordContent {
 	context: string;

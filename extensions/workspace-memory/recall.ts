@@ -177,7 +177,7 @@ export function rankMemoriesByRelevance(
 /**
  * Format a single memory for context injection
  */
-function isPostMortem(content: Memory["content"], template: MemoryTemplate): content is { problem: string; rootCause: string; fix: string; prevention: string } {
+function isPostMortem(content: Memory["content"], template: MemoryTemplate): content is { problem: string; rootCause: string; fix: string; prevention: string; evidence?: string; candidates?: string } {
 	return template === "post-mortem";
 }
 
@@ -199,7 +199,10 @@ function formatMemory(memory: Memory): string {
 		lines.push(`**Problem:** ${content.problem}`);
 		lines.push(`**Root Cause:** ${content.rootCause}`);
 		lines.push(`**Fix:** ${content.fix}`);
+		if (content.evidence) lines.push(`**Evidence:** ${content.evidence}`);
+		if (content.candidates) lines.push(`**Unconfirmed Candidates:** ${content.candidates}`);
 		if (content.prevention) lines.push(`**Prevention:** ${content.prevention}`);
+
 	} else if (isDecisionRecord(content, template)) {
 		lines.push(`**Context:** ${content.context}`);
 		lines.push(`**Decision:** ${content.decision}`);

@@ -49,6 +49,70 @@ describe("recordFailedAttempt", () => {
 		expect(content.prevention).toContain("Do NOT repeat");
 	});
 
+	it("grounds Fix in the real tool error and separates confirmed evidence from unresolved candidates", () => {
+		const cwd = tempCwd();
+		const res = recordFailedAttempt(
+			{
+				task: "load the config file",
+				why: "consecutive failing tool calls",
+				steps: 5,
+				stopClass: "consecutive_failure",
+				candidates: ["bash:{\"command\":\"cat /tmp/missing.json\"}"],
+				lastError: "ENOENT: no such file or directory",
+				evidence: ["read:{\"file\":\"config.ts\"}"],
+			},
+			cwd,
+		);
+		expect(res.recorded).toBe(true);
+		const content = res.memory?.content as {
+			fix: string;
+			evidence?: string;
+			candidates?: string;
+		};
+		// Fix cites the ACTUAL error, not the generic "try a different decomposition" label.
+		expect(content.fix).toContain("ENOENT: no such file or directory");
+		expect(content.fix).toContain("bash:");
+		// Evidence (already confirmed) and candidates (still unresolved) are kept apart.
+		expect(content.evidence).toContain("read:");
+		expect(content.evidence).toContain("config.ts");
+		expect(content.candidates).toContain("bash:");
+		expect(content.candidates).toContain("missing.json");
+	});
+
+	it("falls back to the generic Fix wording when no grounded diagnostics are supplied", () => {
+		const cwd = tempCwd();
+		const res = recordFailedAttempt(
+			{ task: "legacy caller with no diagnostics", why: "repeating the same tool call", steps: 4, stopClass: "repeat" },
+			cwd,
+		);
+		expect(res.recorded).toBe(true);
+		const content = res.memory?.content as { fix: string; evidence?: string; candidates?: string };
+		expect(content.fix).toContain("Change approach before retrying");
+		expect(content.evidence ?? "").toBe("");
+		expect(content.candidates ?? "").toBe("");
+	});
+
+	it("names the repeated call but omits an error quote when the repeat succeeded every time", () => {
+		const cwd = tempCwd();
+		const res = recordFailedAttempt(
+			{
+				task: "keep re-running the build for no reason",
+				why: "repeating the same tool call",
+				steps: 4,
+				stopClass: "repeat",
+				candidates: ["bash:{\"command\":\"npm run build\"}"],
+				lastError: "",
+				evidence: [],
+			},
+			cwd,
+		);
+		expect(res.recorded).toBe(true);
+		const content = res.memory?.content as { fix: string };
+		expect(content.fix).toContain("bash:");
+		expect(content.fix).toContain("produced no new outcome");
+	});
+
+
 	it("dedupes an identical stall instead of re-recording it", () => {
 		const cwd = tempCwd();
 		const attempt = { task: "fix the flaky test", why: "repeating the same tool call", steps: 4, stopClass: "repeat" };
@@ -132,4 +196,28 @@ describe("failure-first recall priority", () => {
 		expect(notePos).toBeGreaterThanOrEqual(0);
 		expect(failurePos).toBeLessThan(notePos);
 	});
+
+	it("end-to-end: recallMemories renders grounded Evidence/Unconfirmed Candidates sections", async () => {
+		const cwd = tempCwd();
+		recordFailedAttempt(
+			{
+				task: "load the tokenizer config",
+				why: "consecutive failing tool calls",
+				steps: 5,
+				stopClass: "consecutive_failure",
+				candidates: ["bash:{\"command\":\"cat missing.json\"}"],
+				lastError: "ENOENT: missing.json not found",
+				evidence: ["read:{\"file\":\"tokenizer.ts\"}"],
+			},
+			cwd,
+		);
+
+		invalidateCache(cwd);
+		const index = getCachedIndex(cwd);
+		const { text } = await recallMemories(index, "the tokenizer config again", cwd);
+		expect(text).toContain("ENOENT: missing.json not found");
+		expect(text).toContain("**Evidence:**");
+		expect(text).toContain("**Unconfirmed Candidates:**");
+	});
 });
+

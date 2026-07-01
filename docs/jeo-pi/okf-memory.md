@@ -70,7 +70,8 @@ both the JSON store hooks and the bundle mirror.
 | `okf-bundle.ts` | (jeo-pi-native glue) | `Memory` ⇄ concept mapping, mirror-on-save, `index.md`/`log.md` maintenance, `expandRecallByGraph` (spare-slot recall expansion), bundle lint |
 | `distill.ts` | `memory.ts` (session-exit distill) | `serializeTranscript`, `buildDistillContext`, `extractDistilledMemories` (tolerant JSON), `distillSession` — automatic end-of-session knowledge accumulation through the shared `createAndSaveMemory` path |
 | `rrf.ts` | `memory.ts` (`reciprocalRankFusion`) | `reciprocalRankFusion`/`fuseRankedLists` — fuse lexical-relevance + learned recall-value rankings for robust retrieval ordering |
-| `stall.ts` | `loop-guards.ts` + `engine.ts` (guard-detected stall) | `detectStall` — reconstructs jeo-code's `consecutive_failure`/`repeat`/`cycle` `stopClass` from the finished transcript at `agent_end`, using the identical `GUARD_LIMITS` (`MAX_REPEAT=4`, `MAX_FAILURES=5`, `CYCLE_WINDOW=6`) and `READONLY_TOOLS` exclusion |
+| `stall.ts` | `loop-guards.ts` + `engine.ts` (guard-detected stall) | `detectStall` — reconstructs jeo-code's `consecutive_failure`/`repeat`/`cycle` `stopClass` from the finished transcript at `agent_end`, using the identical `GUARD_LIMITS` (`MAX_REPEAT=4`, `MAX_FAILURES=5`, `CYCLE_WINDOW=6`) and `READONLY_TOOLS` exclusion; also extracts `candidates`/`lastError`/`evidence` — the grounded diagnostic a stalled turn leaves behind, not just its classification |
+
 
 
 ## 4. Data flow (ingest → manage → search → reference)
@@ -144,6 +145,25 @@ turn. jeo-pi reflects this exactly, not just the OKF storage shape:
    unrelated dead end never crowds out relevant context. This is what closes
    the loop: the *next* turn's `<workspace_memories>` block leads with "what NOT
    to repeat" before anything else.
+4. **Ground the record in what actually happened, not a generic label.**
+   `stall.ts`'s `detectStall` also extracts `candidates` (the distinct call
+   signature(s) implicated in the stall — what NOT to repeat verbatim),
+   `lastError` (the real tool-error text of the most recent failure in that
+   run), and `evidence` (distinct successful calls confirmed *earlier in the
+   same turn*, before the stall, so the next turn does not have to re-derive
+   them by re-reading the whole transcript). `save.ts`'s `recordFailedAttempt`
+   uses these to write a `Fix` that quotes the actual error instead of a
+   boilerplate "try a different approach", plus an `Evidence` section
+   (confirmed) and an `Unconfirmed Candidates` section (still open) — a
+   structural split of the working state a stalled turn leaves behind. This
+   directly operationalises the insight that raw tool-call/experiment counts
+   matter less than whether the concrete failure signal — the diagnostic, the
+   exact call that didn't work, what was already confirmed — gets carried
+   into the next attempt. `recall.ts`'s `formatMemory` renders both sections
+   into the injected `<workspace_memories>` block when present, and
+   `okf-bundle.ts`'s `renderBody` mirrors them into the durable concept file
+   on disk, so the split survives across sessions too, not just within one.
+
 
 This is deliberately narrower than a general "learn from everything" system: a
 success is still recorded (through `memory_save` or the session-exit
@@ -192,7 +212,7 @@ succeed, not what already works.
 
 ```bash
 cd extensions/workspace-memory
-npx vitest run            # 105 tests incl. okf*, distill.test.ts, rrf.test.ts, stall.test.ts, failure-first.test.ts
+npx vitest run            # 114 tests incl. okf*, distill.test.ts, rrf.test.ts, stall.test.ts, failure-first.test.ts
 
 npx tsc --noEmit          # zero errors
 npx tsx scripts/runtime-check.ts       # real-filesystem OKF bundle + graph-recall check
