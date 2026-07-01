@@ -198,6 +198,26 @@ describe("buildTmuxLaunchEnv", () => {
     expect(env.PI_TEAM_WORKER).toBe("1");
     expect(env.GITHUB_TOKEN).toBeUndefined();
   });
+
+  it("should forward OMP auth-broker coordinates without leaking bearer tokens", () => {
+    const env = buildTmuxLaunchEnv({
+      PI_CONFIG_DIR: "/tmp/pi-config",
+      OMP_AUTH_BROKER_URL: "https://broker.tailnet:8765",
+      OMP_AUTH_BROKER_TOKEN: "secret-token",
+      OMP_AUTH_BROKER_SNAPSHOT_TTL_MS: "60000",
+      OMP_AUTH_BROKER_SNAPSHOT_CACHE: "/tmp/pi-cache/auth-broker-snapshot.enc",
+      ANTHROPIC_API_KEY: "secret-api-key",
+    });
+
+    expect(env).toMatchObject({
+      PI_CONFIG_DIR: "/tmp/pi-config",
+      OMP_AUTH_BROKER_URL: "https://broker.tailnet:8765",
+      OMP_AUTH_BROKER_SNAPSHOT_TTL_MS: "60000",
+      OMP_AUTH_BROKER_SNAPSHOT_CACHE: "/tmp/pi-cache/auth-broker-snapshot.enc",
+    });
+    expect(env.OMP_AUTH_BROKER_TOKEN).toBeUndefined();
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+  });
 });
 
 describe("getCycleViolations", () => {

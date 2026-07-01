@@ -305,6 +305,7 @@ export function buildTmuxShellCommand(params: {
 
 export function buildTmuxLaunchEnv(env: Record<string, string | undefined>): Record<string, string | undefined> {
   const allowed = new Set([
+    "PI_CONFIG_DIR",
     "PI_TEAM_WORKER",
     "PI_AGENTIC_MICROCOMPACTION",
     "PI_SUBAGENT_ARTIFACT_DIR",
@@ -322,6 +323,12 @@ export function buildTmuxLaunchEnv(env: Record<string, string | undefined>): Rec
     SUBAGENT_FORK_SESSION_ENV,
     SUBAGENT_CONTEXT_MODE_ENV,
     "PI_AGENTIC_SANDBOX_APPROVAL",
+    // OMP auth-broker readiness: forward only non-secret coordinates/cache knobs.
+    // Bearer tokens (OMP_AUTH_BROKER_TOKEN) must be read from the config dir by the
+    // child process, not embedded in tmux launch scripts or process arguments.
+    "OMP_AUTH_BROKER_URL",
+    "OMP_AUTH_BROKER_SNAPSHOT_TTL_MS",
+    "OMP_AUTH_BROKER_SNAPSHOT_CACHE",
   ]);
   return Object.fromEntries(Object.entries(env).filter(([key]) => allowed.has(key)));
 }
