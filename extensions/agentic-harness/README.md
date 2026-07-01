@@ -154,6 +154,17 @@ Follow-up command mode uses the same `team` tool surface with `resumeRunId`, `co
 - Can conservatively resume persisted runs by preserving terminal task state and marking stale in-progress tasks/commands interrupted unless explicitly retried.
 - Reports the run as incomplete/failed when any worker fails; partial worker success must not be synthesized as full team success.
 
+### Tmux worker environment and OMP auth-broker readiness
+
+Tmux-backed workers inherit a narrow allowlist of environment variables instead of the parent process environment. For OMP auth-broker integration readiness, the allowlist forwards only non-secret broker coordinates and cache/config knobs:
+
+- `PI_CONFIG_DIR`
+- `OMP_AUTH_BROKER_URL`
+- `OMP_AUTH_BROKER_SNAPSHOT_TTL_MS`
+- `OMP_AUTH_BROKER_SNAPSHOT_CACHE`
+
+Do not pass bearer tokens or provider API keys through tmux launch scripts, process arguments, or pane logs. In particular, `OMP_AUTH_BROKER_TOKEN`, `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`, and similar secrets remain stripped; worker processes that need broker authentication should resolve it from the configured pi config directory instead.
+
 ### Deferred parity milestones
 
 The lightweight team implementation intentionally defers heavier team-runtime features until they are implemented and tested:
