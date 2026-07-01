@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.29.2](https://github.com/akillness/jeo-pi/compare/v1.29.1...v1.29.2) (2026-07-01)
+
+### Bug Fixes
+
+* **subagent:** forward OMP auth-broker coordinates to tmux team workers ([80e4917](https://github.com/akillness/jeo-pi/commit/80e49179059f287e67f1588254a7442f981fc069))
+* **team:** bound retained failed-run tmux resources to stop unbounded growth ([8b83c89](https://github.com/akillness/jeo-pi/commit/8b83c8992e5216189c3415cf1da7103bbfa2c65f))
+* **tmux:** rebind WheelUpPane so wheel-up reliably enters copy-mode scroll ([c979b64](https://github.com/akillness/jeo-pi/commit/c979b64fef0536af8666bc20dbbeac81c4dd59c1))
+
 ## [1.29.1](https://github.com/akillness/jeo-pi/compare/v1.29.0...v1.29.1) (2026-07-01)
 
 ### Bug Fixes
