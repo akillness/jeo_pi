@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "build": "tsc --noEmit"
+    "build": "tsc --noEmit",
+    "runtime-check": "npx --yes tsx scripts/runtime-check.ts",
+    "runtime-check:failure": "npx --yes tsx scripts/failure-runtime-check.ts"
   },
   "dependencies": {
     "@mariozechner/pi-coding-agent": "^0.72.1",

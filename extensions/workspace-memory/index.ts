@@ -12,7 +12,8 @@ import { completeSimple } from "@mariozechner/pi-ai";
 import { getCachedIndex, setCachedIndex, saveIndex } from "./storage";
 import { detectKeywords, selectTemplateFromKeywords, TEMPLATE_LABELS } from "./templates";
 import { recallMemories } from "./recall";
-import { createAndSaveMemory } from "./save";
+import { createAndSaveMemory, recordFailedAttempt } from "./save";
+import { detectStall } from "./stall";
 import { distillSession, type DistillComplete } from "./distill";
 import { handleMemoryCommand } from "./commands";
 
@@ -31,10 +32,30 @@ export default function workspaceMemoryExtension(pi: ExtensionAPI) {
 	// itself carries no messages, so we stash them here.
 	const latestMessages = new Map<string, { role?: string; content?: unknown; isError?: boolean }[]>();
 
-	// --- Agent loop end: capture transcript for end-of-session distillation ---
+	// --- Agent loop end: capture transcript + failure-first stall capture ---
 	pi.on("agent_end", async (event, ctx) => {
-		if (Array.isArray(event.messages) && event.messages.length > 0) {
-			latestMessages.set(ctx.cwd, event.messages);
+		if (!Array.isArray(event.messages) || event.messages.length === 0) return;
+		latestMessages.set(ctx.cwd, event.messages);
+
+		// Failure-first (jeo-code's core philosophy): if this turn stalled —
+		// repeated / cycled / consecutively failed without recovering — record it
+		// NOW as a FailedAttempt memory so the next turn's recall resurfaces it
+		// first and the model does not repeat the same dead end. Deterministic
+		// (no LLM), best-effort: never disrupt the turn.
+		try {
+			const stall = detectStall(event.messages);
+			if (stall) {
+				const result = recordFailedAttempt(
+					{ task: stall.task, why: stall.why, steps: stall.steps, stopClass: stall.stopClass },
+					ctx.cwd
+				);
+				if (result.recorded && ctx.hasUI) {
+					const index = getCachedIndex(ctx.cwd);
+					ctx.ui.setStatus("memory", `💾 ${index.memories.length} (⚠ failure recorded)`);
+				}
+			}
+		} catch {
+			// Stall capture is best-effort; never disrupt the agent loop.
 		}
 	});
 
@@ -72,7 +93,6 @@ export default function workspaceMemoryExtension(pi: ExtensionAPI) {
 			latestMessages.delete(ctx.cwd);
 		}
 	});
-
 
 	// --- Before agent start: keyword detection + recall ---
 	pi.on("before_agent_start", async (event, ctx) => {

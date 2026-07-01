@@ -13,6 +13,7 @@
  */
 
 import type { Memory, MemoryIndex, MemoryIndexEntry, MemoryTemplate } from "./types";
+import { FAILURE_TAG } from "./types";
 import { loadMemory, saveIndex, setCachedIndex, removeIndexEntry } from "./storage";
 import { recordRecall } from "./scoring";
 import { expandRecallByGraph } from "./okf-bundle";
@@ -115,6 +116,13 @@ function calculateRelevanceScore(
  * Fusion (jeo-code's retrieval blend): the lexical-relevance ranking and the
  * learned recall-value ranking. A memory strong on both rises; a memory strong
  * on only one still surfaces.
+ *
+ * FAILURE-FIRST (jeo-code's priorityOrder, ported): a query-relevant failure
+ * memory (tagged {@link FAILURE_TAG}) is surfaced AHEAD of everything else.
+ * Resurfacing a known dead end is higher-leverage than reinforcing what already
+ * works, and it is the mechanism by which the loop sharpens the more it repeats.
+ * The boost is gated on candidacy (score > 0), so an unrelated past failure never
+ * crowds out relevant context; among failures the fused order is preserved.
  */
 export function rankMemoriesByRelevance(
 	index: MemoryIndex,
@@ -152,7 +160,18 @@ export function rankMemoriesByRelevance(
 	);
 
 	const byId = new Map(candidates.map((e) => [e.id, e] as const));
-	return orderedIds.map((id) => byId.get(id)!).filter(Boolean);
+	const ordered = orderedIds.map((id) => byId.get(id)!).filter(Boolean);
+
+	// Failure-first: stably hoist query-relevant failure memories ahead of the
+	// rest, preserving the fused order within each group (jeo-code's priorityOrder
+	// `failure` sort key). Every entry here already cleared the score > 0 gate, so
+	// only failures the query actually hit are hoisted.
+	const failures = ordered.filter((e) => e.tags.includes(FAILURE_TAG));
+	if (failures.length === 0 || failures.length === ordered.length) {
+		return ordered;
+	}
+	const rest = ordered.filter((e) => !e.tags.includes(FAILURE_TAG));
+	return [...failures, ...rest];
 }
 
 /**

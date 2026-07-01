@@ -411,7 +411,10 @@ Workspace memory stores important findings as structured records under pi's agen
 
 Each saved memory is additionally mirrored into a human-, git-, and graphify-readable **OKF (Open Knowledge Format) v0.1** knowledge bundle at `.jeo/memory/` — one concept document per memory, plus a progressive-disclosure `index.md` and an ISO-8601 `log.md`. The JSON store stays the operational source of truth; the bundle is an additive, durable knowledge layer. Set `JEO_NO_MEMORY=1` to disable persistence and the mirror entirely.
 
-Recall is keyword-ranked over the lightweight index, then — when injection slots remain — expanded one hop along the bundle's concept cross-link graph, so a memory the query directly hits can pull in the neighbours it links to. The expansion is dormant until memories cross-link and never crowds out a lexical hit.
+Recall is keyword-ranked over the lightweight index, then re-ranked by Reciprocal Rank Fusion (blending lexical relevance with each memory's learned recall value), then — when injection slots remain — expanded one hop along the bundle's concept cross-link graph, so a memory the query directly hits can pull in the neighbours it links to. The expansion is dormant until memories cross-link and never crowds out a lexical hit. On `/exit`, an automatic session-exit distiller reviews the finished transcript and files any durable learnings the model never explicitly saved (bounded to 3/session, deduped, an 8s abort timeout so it never hangs the exit).
+
+**Failure-first (jeo-code's core philosophy):** a turn that stalls — repeats the same tool call, cycles between two calls, or fails several times in a row without recovering — is captured immediately as a `post-mortem` memory, deterministically and without an LLM call, the moment the turn ends. On the very next turn whose query touches that same task, this failure memory is surfaced **ahead of every other memory**, including otherwise-stronger matches — because resurfacing a known dead end is worth more than reinforcing what already works. jeo-pi improves by focusing on what did **not** execute or did **not** succeed, not just on what already did.
+
 
 ```text
 /memory list             List all memories
