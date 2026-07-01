@@ -85,20 +85,32 @@ export function stripAnthropicPrefix(model: string): string {
   return model.startsWith("anthropic/") ? model.slice("anthropic/".length) : model;
 }
 
-/** Parse a modern Claude id's family + version. Legacy/foreign ids → undefined. */
+/** Parse a modern Claude id's family + version. Legacy/foreign ids → undefined.
+ *  Matches `<major>-<minor>` (opus/sonnet/haiku 4.x) OR a single dateless `<major>`
+ *  (the 5th-gen ids: `claude-sonnet-5`, `claude-fable-5`, `claude-mythos-5`), across
+ *  the opus/sonnet/haiku/fable/mythos families (ported from jeo-code's 5th-gen
+ *  catalog update — Fable 5 is Anthropic's most-capable widely-released model,
+ *  Mythos 5 is limited-availability but callable by id for approved accounts). */
 export function parseAnthropicVersion(
   model: string,
-): { kind: "opus" | "sonnet" | "haiku"; major: number; minor: number } | undefined {
-  const m = /claude-(opus|sonnet|haiku)-(\d+)-(\d+)/.exec(model);
+): { kind: "opus" | "sonnet" | "haiku" | "fable" | "mythos"; major: number; minor: number } | undefined {
+  const m = /claude-(opus|sonnet|haiku|fable|mythos)-(\d+)(?:-(\d+))?/.exec(model);
   if (!m) return undefined;
-  return { kind: m[1] as "opus" | "sonnet" | "haiku", major: Number(m[2]), minor: Number(m[3]) };
+  return {
+    kind: m[1] as "opus" | "sonnet" | "haiku" | "fable" | "mythos",
+    major: Number(m[2]),
+    minor: m[3] !== undefined ? Number(m[3]) : 0,
+  };
 }
 
-/** Adaptive thinking `display` is supported from Opus 4.7. Below it, the field is rejected. */
+/** Adaptive thinking `display` is supported from Opus 4.7 onward, and by every
+ *  5th-generation+ model (Sonnet 5, Fable 5, Mythos 5, …) regardless of family —
+ *  only the first adaptive generation (Opus 4.6, Sonnet 4.6) rejects the field. */
 export function supportsAdaptiveThinkingDisplay(model: string): boolean {
   const v = parseAnthropicVersion(model);
-  if (!v || v.kind !== "opus") return false;
-  return v.major > 4 || (v.major === 4 && v.minor >= 7);
+  if (!v) return false;
+  if (v.major >= 5) return true;
+  return v.kind === "opus" && v.major === 4 && v.minor >= 7;
 }
 
 export type AnthropicThinkingMode = "adaptive" | "budget-effort" | "budget";

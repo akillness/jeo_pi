@@ -115,10 +115,16 @@ path** — the Claude Pro/Max OAuth subscription returns HTTP 404 `model:` for i
 API key.
 
 Thinking transport is selected per id by `messages.ts`: opus 4.6+ stream via
-adaptive thinking, 4.5 via budget-effort, older ids via budget. Three HTTP-400
-fail-safes in `postAnthropic` keep a request alive instead of erroring: a
-deprecated `temperature` (`isDeprecatedTemperatureError`, e.g. Opus 4.8) retries
-once without it, an unsupported effort/adaptive field
+adaptive thinking, 4.5 via budget-effort (Opus only — Sonnet/Haiku 4.5 reject
+the `effort` field, live-verified), older ids via budget. Every 5th-generation
+model (`claude-sonnet-5`, `claude-fable-5`, `claude-mythos-5`, …) always
+resolves to adaptive thinking + adaptive `display`, regardless of family —
+`parseAnthropicVersion` recognizes the dateless single-major 5th-gen ids
+alongside the fable/mythos families (ported from jeo-code's 5th-gen catalog
+update), so the transport logic is ready the moment those ids are offered.
+Three HTTP-400 fail-safes in `postAnthropic` keep a request alive instead of
+erroring: a deprecated `temperature` (`isDeprecatedTemperatureError`, e.g. Opus
+4.8) retries once without it, an unsupported effort/adaptive field
 (`isEffortUnsupportedError`, e.g. Sonnet/Haiku 4.5) retries with plain budget
 thinking, and a rejected replayed reasoning artifact (`isReasoningArtifactError`)
 retries with the artifacts stripped — and crucially that strip retry now also

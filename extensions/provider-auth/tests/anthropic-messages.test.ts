@@ -89,6 +89,12 @@ describe("parseAnthropicVersion", () => {
     expect(parseAnthropicVersion("claude-3-5-sonnet")).toBeUndefined();
     expect(parseAnthropicVersion("gpt-5")).toBeUndefined();
   });
+  it("parses dateless 5th-gen ids across the fable/mythos families (jeo-code catalog parity)", () => {
+    expect(parseAnthropicVersion("claude-sonnet-5")).toEqual({ kind: "sonnet", major: 5, minor: 0 });
+    expect(parseAnthropicVersion("claude-fable-5")).toEqual({ kind: "fable", major: 5, minor: 0 });
+    expect(parseAnthropicVersion("claude-mythos-5")).toEqual({ kind: "mythos", major: 5, minor: 0 });
+  });
+
 });
 
 describe("anthropicThinkingMode", () => {
@@ -102,6 +108,12 @@ describe("anthropicThinkingMode", () => {
     expect(anthropicThinkingMode("claude-haiku-4-5")).toBe("budget");
     expect(anthropicThinkingMode("claude-3-5-sonnet")).toBe("budget");
   });
+  it("selects adaptive for every 5th-gen model regardless of family", () => {
+    expect(anthropicThinkingMode("claude-sonnet-5")).toBe("adaptive");
+    expect(anthropicThinkingMode("claude-fable-5")).toBe("adaptive");
+    expect(anthropicThinkingMode("claude-mythos-5")).toBe("adaptive");
+  });
+
 });
 
 describe("supportsAdaptiveThinkingDisplay", () => {
@@ -111,6 +123,12 @@ describe("supportsAdaptiveThinkingDisplay", () => {
     expect(supportsAdaptiveThinkingDisplay("claude-opus-4-6")).toBe(false);
     expect(supportsAdaptiveThinkingDisplay("claude-sonnet-4-7")).toBe(false);
   });
+  it("is also supported by every 5th-gen model regardless of family", () => {
+    expect(supportsAdaptiveThinkingDisplay("claude-sonnet-5")).toBe(true);
+    expect(supportsAdaptiveThinkingDisplay("claude-fable-5")).toBe(true);
+    expect(supportsAdaptiveThinkingDisplay("claude-mythos-5")).toBe(true);
+  });
+
 });
 
 describe("anthropicThinkingBudget", () => {
