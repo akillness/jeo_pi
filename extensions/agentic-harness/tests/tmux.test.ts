@@ -60,6 +60,7 @@ describe("tmux helpers", () => {
       "",     // set-option set-clipboard on
       "",     // show-options mode-style (empty global)
       "",     // show-options copy-mode-selection-style (empty global)
+      "",     // bind-key WheelUpPane
       "",     // pipe-pane task-1
       "%2\n", // split-window
       "",     // pipe-pane task-2
@@ -100,6 +101,7 @@ describe("tmux helpers", () => {
       { file: "tmux", args: ["set-option", "-t", "pi-team-demo", "set-clipboard", "on"] },
       { file: "tmux", args: ["show-options", "-gv", "-t", "pi-team-demo", "mode-style"] },
       { file: "tmux", args: ["show-options", "-gv", "-t", "pi-team-demo", "copy-mode-selection-style"] },
+      { file: "tmux", args: ["bind-key", "-n", "WheelUpPane", "if-shell", "-Ft=", "#{pane_in_mode}", "send-keys -M", "copy-mode -e"] },
       { file: "tmux", args: ["pipe-pane", "-t", "%1", "-o", "cat >> '/tmp/John Doe/a;b/task-1.log'"] },
       { file: "tmux", args: ["split-window", "-t", "pi-team-demo:workers", "-P", "-F", "#{pane_id}"] },
       { file: "tmux", args: ["pipe-pane", "-t", "%2", "-o", "cat >> '/tmp/John Doe/a;b/task-2.log'"] },
@@ -114,6 +116,7 @@ describe("tmux helpers", () => {
       "",                          // set-option set-clipboard on
       "",                          // show-options mode-style (empty global)
       "",                          // show-options copy-mode-selection-style (empty global)
+      "",                          // bind-key WheelUpPane
       "%11\n",                     // split-window worker 1
       "",                          // pipe-pane task-1
       "%12\n",                     // split-window worker 2
@@ -155,6 +158,7 @@ describe("tmux helpers", () => {
       { file: "tmux", args: ["set-option", "-t", "dev-session", "set-clipboard", "on"] },
       { file: "tmux", args: ["show-options", "-gv", "-t", "dev-session", "mode-style"] },
       { file: "tmux", args: ["show-options", "-gv", "-t", "dev-session", "copy-mode-selection-style"] },
+      { file: "tmux", args: ["bind-key", "-n", "WheelUpPane", "if-shell", "-Ft=", "#{pane_in_mode}", "send-keys -M", "copy-mode -e"] },
       { file: "tmux", args: ["split-window", "-t", "%9", "-P", "-F", "#{pane_id}"] },
       { file: "tmux", args: ["pipe-pane", "-t", "%11", "-o", "cat >> '/tmp/current-window/task-1.log'"] },
       { file: "tmux", args: ["split-window", "-t", "%9", "-P", "-F", "#{pane_id}"] },
@@ -208,6 +212,7 @@ describe("tmux helpers", () => {
       ["set-option", "-t", "pi-run-attempt-retry1", "set-clipboard", "on"],
       ["show-options", "-gv", "-t", "pi-run-attempt-retry1", "mode-style"],
       ["show-options", "-gv", "-t", "pi-run-attempt-retry1", "copy-mode-selection-style"],
+      ["bind-key", "-n", "WheelUpPane", "if-shell", "-Ft=", "#{pane_in_mode}", "send-keys -M", "copy-mode -e"],
       ["pipe-pane", "-t", "%1", "-o", "cat >> '/tmp/run/task-1.log'"],
       ["select-layout", "-t", "pi-run-attempt-retry1:workers", "tiled"],
     ]);
@@ -315,8 +320,8 @@ describe("appendNoUnderlineStyleFlags", () => {
 });
 
 describe("enableMouseScrolling", () => {
-  it("issues mouse on, set-clipboard on, and underline-mitigation queries against the session target", async () => {
-    const { runner, calls } = createMockRunner(["", "", "", ""]);
+  it("issues mouse on, set-clipboard on, underline-mitigation queries, and the wheel-scroll rebind against the session target", async () => {
+    const { runner, calls } = createMockRunner(["", "", "", "", ""]);
 
     await enableMouseScrolling(runner, "tmux", "pi-team-demo");
 
@@ -325,6 +330,7 @@ describe("enableMouseScrolling", () => {
       { file: "tmux", args: ["set-option", "-t", "pi-team-demo", "set-clipboard", "on"] },
       { file: "tmux", args: ["show-options", "-gv", "-t", "pi-team-demo", "mode-style"] },
       { file: "tmux", args: ["show-options", "-gv", "-t", "pi-team-demo", "copy-mode-selection-style"] },
+      { file: "tmux", args: ["bind-key", "-n", "WheelUpPane", "if-shell", "-Ft=", "#{pane_in_mode}", "send-keys -M", "copy-mode -e"] },
     ]);
   });
 
@@ -336,6 +342,7 @@ describe("enableMouseScrolling", () => {
       "", // set-option mode-style sanitized
       "fg=colour231,nounderscore\n", // show-options copy-mode-selection-style
       "", // set-option copy-mode-selection-style sanitized
+      "", // bind-key WheelUpPane
     ]);
 
     await enableMouseScrolling(runner, "tmux", "pi-team-demo");
@@ -365,6 +372,7 @@ describe("enableMouseScrolling", () => {
           "fg=colour231,nounderscore,nodouble-underscore,nocurly-underscore,nodotted-underscore,nodashed-underscore",
         ],
       },
+      { file: "tmux", args: ["bind-key", "-n", "WheelUpPane", "if-shell", "-Ft=", "#{pane_in_mode}", "send-keys -M", "copy-mode -e"] },
     ]);
   });
 
@@ -382,6 +390,27 @@ describe("enableMouseScrolling", () => {
     await expect(enableMouseScrolling(runner, "tmux", "pi-team-demo")).resolves.toBeUndefined();
     expect(calls).toEqual([
       { file: "tmux", args: ["set-option", "-t", "pi-team-demo", "mouse", "on"] },
+    ]);
+  });
+
+  it("does not block session setup when the wheel-scroll rebind itself fails", async () => {
+    const calls: Array<{ file: string; args: string[] }> = [];
+    const runner: TmuxCommandRunner = (file, args, _options, callback) => {
+      calls.push({ file, args: [...args] });
+      if (args[0] === "bind-key") {
+        callback(new Error("unknown key: WheelUpPane"), "", "unknown key: WheelUpPane");
+        return;
+      }
+      callback(null, "", "");
+    };
+
+    await expect(enableMouseScrolling(runner, "tmux", "pi-team-demo")).resolves.toBeUndefined();
+    expect(calls).toEqual([
+      { file: "tmux", args: ["set-option", "-t", "pi-team-demo", "mouse", "on"] },
+      { file: "tmux", args: ["set-option", "-t", "pi-team-demo", "set-clipboard", "on"] },
+      { file: "tmux", args: ["show-options", "-gv", "-t", "pi-team-demo", "mode-style"] },
+      { file: "tmux", args: ["show-options", "-gv", "-t", "pi-team-demo", "copy-mode-selection-style"] },
+      { file: "tmux", args: ["bind-key", "-n", "WheelUpPane", "if-shell", "-Ft=", "#{pane_in_mode}", "send-keys -M", "copy-mode -e"] },
     ]);
   });
 });

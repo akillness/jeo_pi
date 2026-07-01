@@ -118,6 +118,49 @@ export async function mitigateCopyModeUnderlineArtifacts(
   }
 }
 
+/**
+ * tmux's stock `WheelUpPane` binding only enters copy-mode scrollback when the
+ * pane's foreground program has NOT itself requested mouse tracking
+ * (`#{mouse_any_flag}`). pi's TUI enables mouse tracking for its own UI but has
+ * no in-app scroll handling for the main viewport (see pi-scrollback's
+ * `scroll-view.ts` comment), so with the stock binding every wheel-up event is
+ * forwarded straight into pi instead of scrolling tmux's history — from the
+ * user's perspective the pane looks permanently pinned to the latest line no
+ * matter where they scroll to.
+ *
+ * Rebind `WheelUpPane` to check `#{pane_in_mode}` instead of
+ * `#{mouse_any_flag}`: always enter/continue copy-mode on wheel-up, and only
+ * forward the raw mouse event when the pane is already in a tmux mode (so
+ * scrolling further while already in copy-mode still works as expected). This
+ * mirrors tmux's own default binding shape, just swapping the guard
+ * condition — the standard mitigation for full-screen programs that grab
+ * mouse tracking without providing their own wheel-scroll handling.
+ *
+ * `bind-key` operates on tmux's server-wide root key table (tmux has no
+ * per-session key-binding scope), so — like the rest of `enableMouseScrolling`
+ * — this is a deliberate, best-effort change applied whenever a jeo-pi tmux
+ * team session is created, and it is fully skippable via `PI_TEAM_MOUSE=0`.
+ */
+async function forceWheelScrollIntoCopyMode(
+  commandRunner: TmuxCommandRunner,
+  binary: string,
+): Promise<void> {
+  try {
+    await runCommand(commandRunner, binary, [
+      "bind-key",
+      "-n",
+      "WheelUpPane",
+      "if-shell",
+      "-Ft=",
+      "#{pane_in_mode}",
+      "send-keys -M",
+      "copy-mode -e",
+    ]);
+  } catch {
+    // best-effort: never block pane creation on a scroll-behavior mitigation
+  }
+}
+
 export async function enableMouseScrolling(
   commandRunner: TmuxCommandRunner,
   binary: string,
@@ -137,7 +180,9 @@ export async function enableMouseScrolling(
     // best-effort: OSC 52 is a nice-to-have, do not abort underline mitigation
   }
   await mitigateCopyModeUnderlineArtifacts(commandRunner, binary, target);
+  await forceWheelScrollIntoCopyMode(commandRunner, binary);
 }
+
 
 export function parseTmuxAvailability(stdout: string): TmuxAvailability {
   const binary = stdout
