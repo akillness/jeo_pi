@@ -630,6 +630,7 @@ export default function (pi: ExtensionAPI) {
     resumeRunId?: string;
     resumeMode?: StaleTaskResumeMode;
     staleTaskMs?: number;
+    taskTimeoutMs?: number;
     commandTarget?: string;
     commandMessage?: string;
   };
@@ -684,6 +685,7 @@ export default function (pi: ExtensionAPI) {
       description: "How to handle stale in-progress tasks when resuming.",
     })),
     staleTaskMs: Type.Optional(Type.Number({ description: "Age in milliseconds before in-progress resume tasks are stale" })),
+    taskTimeoutMs: Type.Optional(Type.Number({ description: "Absolute per-task wall-clock deadline in milliseconds; a worker that exceeds it is aborted and its task marked failed instead of hanging the run forever" })),
     commandTarget: Type.Optional(Type.String({ description: "Follow-up mode target worker owner or task id for an existing resumed run" })),
     commandMessage: Type.Optional(Type.String({ description: "Follow-up mode command message to enqueue for the target" })),
   });
@@ -704,7 +706,7 @@ export default function (pi: ExtensionAPI) {
         renderCall: (args, theme) => renderCall(args, theme),
         renderResult: (result, { expanded }, theme) => renderResult(result, expanded, theme),
       execute: async (_toolCallId, params, signal, onUpdate, ctx) => {
-        const { goal, workerCount, agent, agentScope, worktree, worktreePolicy, backend, maxOutput, runId, resumeRunId, resumeMode, staleTaskMs, commandTarget, commandMessage } = params as TeamToolParams;
+        const { goal, workerCount, agent, agentScope, worktree, worktreePolicy, backend, maxOutput, runId, resumeRunId, resumeMode, staleTaskMs, taskTimeoutMs, commandTarget, commandMessage } = params as TeamToolParams;
         const defaultCwd = ctx.cwd;
         const teamRunStateRoot = defaultTeamRunStateRoot(defaultCwd);
         const hasUI = (ctx as any).hasUI !== false && !!ctx?.ui?.select;
@@ -739,7 +741,7 @@ export default function (pi: ExtensionAPI) {
         if (indicatorSupported) ctx.ui.setWorkingIndicator({ frames: [] });
         let summary: TeamRunSummary;
         try {
-          summary = await runTeam({ goal, workerCount, agent, worktree, worktreePolicy, backend, maxOutput, runId, resumeRunId, resumeMode, staleTaskMs, commandTarget, commandMessage, signal }, {
+          summary = await runTeam({ goal, workerCount, agent, worktree, worktreePolicy, backend, maxOutput, runId, resumeRunId, resumeMode, staleTaskMs, taskTimeoutMs, commandTarget, commandMessage, signal }, {
           findAgent,
           summarizeResult: getResultSummaryText,
           persistRun: async (record) => {
@@ -789,7 +791,7 @@ export default function (pi: ExtensionAPI) {
             task: input.prompt,
             cwd: defaultCwd,
             depthConfig,
-            signal,
+            signal: input.signal ?? signal,
             sandbox: sandboxFor(defaultCwd),
             onUpdate,
             makeDetails: makeDetails("parallel"),

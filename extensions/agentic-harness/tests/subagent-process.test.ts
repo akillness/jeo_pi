@@ -788,6 +788,50 @@ describe.runIf(process.platform !== "win32")("runAgent process ownership", () =>
 
     expect(result.exitCode).toBe(130);
     expect(result.stopReason).toBe("aborted");
+    expect(result.errorMessage).toBe("Subagent was aborted.");
+    await waitFor(() => !isPidAlive(state.parentPid) && !isPidAlive(state.grandchildPid), 4000);
+  });
+
+  it("surfaces a custom abort reason (e.g. a task timeout) instead of the generic abort message", async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "subagent-process-abort-reason-"));
+    tempDirs.push(tempDir);
+    const stateFile = join(tempDir, "state.json");
+
+    process.argv = [process.execPath, fixtureScript];
+    const controller = new AbortController();
+
+    const runPromise = runAgent({
+      agent: {
+        name: "fixture",
+        description: "fixture agent",
+        filePath: fixtureScript,
+        source: "project",
+        systemPrompt: "",
+        tools: [],
+      },
+      agentName: "fixture",
+      task: "abort-hang",
+      cwd: tempDir,
+      depthConfig: resolveDepthConfig(),
+      ownership: { runId: "root-abort-reason-run", owner: "test-suite" },
+      extraEnv: {
+        FIXTURE_STATE_FILE: stateFile,
+      },
+      signal: controller.signal,
+      makeDetails: (results) => ({ mode: "single", results }),
+    });
+
+    await waitFor(() => !!loadState(stateFile).grandchildPid, 2000);
+    const state = loadState(stateFile);
+    trackedPids.add(state.parentPid);
+    trackedPids.add(state.grandchildPid);
+
+    controller.abort(new Error("worker exceeded taskTimeoutMs (50ms)"));
+    const result = await runPromise;
+
+    expect(result.exitCode).toBe(130);
+    expect(result.stopReason).toBe("aborted");
+    expect(result.errorMessage).toBe("worker exceeded taskTimeoutMs (50ms)");
     await waitFor(() => !isPidAlive(state.parentPid) && !isPidAlive(state.grandchildPid), 4000);
   });
 });

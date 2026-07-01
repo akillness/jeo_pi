@@ -627,6 +627,60 @@ describe("runTeam", () => {
     expect(tmuxMock.killTmuxSession).not.toHaveBeenCalled();
   }, 250);
 
+  it("aborts a hung worker via taskTimeoutMs instead of letting the run hang forever", async () => {
+    vi.useFakeTimers();
+    try {
+      const capturedSignals: (AbortSignal | undefined)[] = [];
+      const runPromise = runTeam(
+        { goal: "Timeout test", workerCount: 1, agent: "worker", runId: "timeout-test", heartbeatMs: 0, taskTimeoutMs: 50 },
+        {
+          runTask: (input) => new Promise<SingleResult>((resolve) => {
+            capturedSignals.push(input.signal);
+            // Simulate a hung worker: only resolves once its signal aborts,
+            // exactly as the real runAgent()/subagent.ts termination path does.
+            input.signal?.addEventListener("abort", () => {
+              resolve(fakeResult(input.agentName, input.prompt, "", {
+                exitCode: 130,
+                stopReason: "aborted",
+                errorMessage: input.signal?.reason instanceof Error ? input.signal.reason.message : "aborted",
+              }));
+            });
+          }),
+        },
+      );
+
+      await vi.advanceTimersByTimeAsync(60);
+      const summary = await runPromise;
+
+      expect(capturedSignals).toHaveLength(1);
+      expect(capturedSignals[0]?.aborted).toBe(true);
+      expect(summary.success).toBe(false);
+      expect(summary.tasks).toHaveLength(1);
+      expect(summary.tasks[0].status).toBe("failed");
+      expect(summary.tasks[0].errorMessage).toMatch(/worker exceeded taskTimeoutMs \(50ms\)/);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not abort a worker that finishes within taskTimeoutMs", async () => {
+    const capturedSignals: (AbortSignal | undefined)[] = [];
+    const summary = await runTeam(
+      { goal: "Fast worker", workerCount: 1, agent: "worker", runId: "timeout-not-triggered", heartbeatMs: 0, taskTimeoutMs: 10_000 },
+      {
+        runTask: async (input) => {
+          capturedSignals.push(input.signal);
+          return fakeResult(input.agentName, input.prompt, "done");
+        },
+      },
+    );
+
+    expect(capturedSignals).toHaveLength(1);
+    expect(capturedSignals[0]?.aborted).toBe(false);
+    expect(summary.success).toBe(true);
+    expect(summary.tasks[0].status).toBe("completed");
+  });
+
   it("emits backend resolved with native fallback and never fires tmux ready when tmux is missing", async () => {
     tmuxMock.detectTmux.mockResolvedValue({ available: false });
     const backendCalls: any[] = [];
@@ -945,6 +999,30 @@ describe("runTeam", () => {
     expect(formatted).toContain("worktreeRefs: /tmp/team-task-1");
     expect(formatted).toContain("Team mode supports task dependencies via blockedBy");
   });
+
+  it("lets a user abort win over a longer taskTimeoutMs without double-aborting", async () => {
+    const controller = new AbortController();
+    const summary = await runTeam(
+      {
+        goal: "Abort still wins over a longer timeout",
+        workerCount: 1,
+        agent: "worker",
+        taskTimeoutMs: 5_000,
+        signal: controller.signal,
+        heartbeatMs: 0,
+      },
+      {
+        runTask: () =>
+          new Promise<SingleResult>(() => {
+            controller.abort(new Error("user aborted team run"));
+          }),
+      },
+    );
+
+    expect(summary.tasks[0].status).toBe("interrupted");
+    expect(summary.tasks[0].errorMessage).toMatch(/user aborted team run/);
+  });
+
 });
 
 describe("resolveTeamWorktreePolicy", () => {
@@ -1082,6 +1160,56 @@ describe("runTeam durable commands", () => {
     expect(finalRecord.commands).toEqual([]);
     expect(finalRecord.events.at(-1).message).toContain("worker-9");
   });
+
+  it("bounds a hung follow-up command with taskTimeoutMs instead of hanging the run forever", async () => {
+    const [task] = createDefaultTeamTasks("Existing run", 1, "worker");
+    task.status = "completed";
+    task.terminal = { backend: "native" };
+    const loadedRecord: any = {
+      schemaVersion: 1,
+      runId: "team-follow-up-timeout",
+      goal: "Existing run",
+      createdAt: "2026-04-28T00:00:00.000Z",
+      updatedAt: "2026-04-28T00:00:00.000Z",
+      status: "completed",
+      options: { goal: "Existing run" },
+      tasks: [task],
+      commands: [],
+      events: [],
+      messages: [],
+    };
+    const records: any[] = [];
+
+    const summary = await runTeam(
+      {
+        resumeRunId: "team-follow-up-timeout",
+        commandTarget: "worker-1",
+        commandMessage: "please verify follow-up",
+        taskTimeoutMs: 20,
+      },
+      {
+        now: () => "2026-04-28T00:01:00.000Z",
+        loadRun: async () => loadedRecord,
+        persistRun: (record) => { records.push(JSON.parse(JSON.stringify(record))); },
+        runTask: ({ agentName, prompt, signal }) =>
+          new Promise((resolve) => {
+            signal?.addEventListener("abort", () => {
+              resolve(fakeResult(agentName, prompt, "", {
+                exitCode: 130,
+                stopReason: "aborted",
+                errorMessage: signal.reason instanceof Error ? signal.reason.message : String(signal.reason),
+              }));
+            });
+          }),
+      },
+    );
+
+    const finalRecord = records.at(-1);
+    expect(summary.success).toBe(false);
+    expect(finalRecord.tasks[0].status).toBe("failed");
+    expect(finalRecord.tasks[0].errorMessage).toMatch(/taskTimeoutMs/);
+  });
+
 });
 
 describe("runTeam follow-up failure safety", () => {

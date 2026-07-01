@@ -1075,7 +1075,15 @@ export async function runAgent(opts: RunAgentOptions): Promise<SingleResult> {
     } else if (wasAborted) {
       result.exitCode = 130;
       result.stopReason = "aborted";
-      result.errorMessage = "Subagent was aborted.";
+      // Prefer a caller-supplied abort reason (e.g. a task-timeout Error) over
+      // the generic message, but fall back to it for a bare `.abort()` with no
+      // reason, whose default DOMException carries a generic "This operation
+      // was aborted" message rather than anything task-specific.
+      result.errorMessage = signal?.reason instanceof Error && signal.reason.name !== "AbortError"
+        ? signal.reason.message
+        : typeof signal?.reason === "string" && signal.reason
+          ? signal.reason
+          : "Subagent was aborted.";
     } else if (result.exitCode > 0) {
       if (!result.stopReason) result.stopReason = "error";
       if (!result.errorMessage && result.stderr.trim()) result.errorMessage = result.stderr.trim();

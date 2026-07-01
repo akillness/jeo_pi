@@ -72,6 +72,15 @@ export interface TeamRunOptions {
   resumeMode?: StaleTaskResumeMode;
   staleTaskMs?: number;
   heartbeatMs?: number;
+  /**
+   * Absolute per-task wall-clock deadline in milliseconds. When set, a worker
+   * that has not finished within this window is aborted (same termination
+   * path as a user-triggered abort: SIGTERM then SIGKILL escalation for
+   * native, abort signal for tmux) and its task is marked "failed" with an
+   * error explaining the timeout, instead of leaving the run hung forever.
+   * Unset/0 preserves the previous no-timeout behavior.
+   */
+  taskTimeoutMs?: number;
   backend?: TeamBackend;
   signal?: AbortSignal;
   commandTarget?: string;
@@ -111,6 +120,8 @@ export interface TeamRunTaskInput {
   agentName: string;
   worktree?: boolean;
   maxOutput?: number;
+  /** Per-task combined abort signal (user abort merged with any task timeout). */
+  signal?: AbortSignal;
   extraEnv: Record<string, string>;
 }
 
@@ -222,18 +233,27 @@ export function validateTeamTasks(tasks: TeamTask[]): void {
  */
 export function computeTaskDepths(tasks: TeamTask[]): Map<string, number> {
   const depths = new Map<string, number>();
+  const inProgress = new Set<string>();
 
   function getDepth(taskId: string): number {
     if (depths.has(taskId)) return depths.get(taskId)!;
+    if (inProgress.has(taskId)) {
+      // Defense-in-depth: validateTeamTasks should already reject cycles before
+      // this runs, but this guard keeps computeTaskDepths/scheduleBatches safe
+      // as standalone calls instead of recursing until a stack overflow crash.
+      throw new Error(`Circular dependency detected involving task: ${taskId}`);
+    }
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.blockedBy.length === 0) {
       depths.set(taskId, 0);
       return 0;
     }
+    inProgress.add(taskId);
     let maxDepDepth = 0;
     for (const depId of task.blockedBy) {
       maxDepDepth = Math.max(maxDepDepth, getDepth(depId));
     }
+    inProgress.delete(taskId);
     const depth = maxDepDepth + 1;
     depths.set(taskId, depth);
     return depth;
@@ -613,6 +633,30 @@ export async function cleanupActiveTeamTmuxResources(): Promise<void> {
   await Promise.all(registrations.map((registration) => cleanupTeamTmuxResources(registration)));
 }
 
+/**
+ * Builds the AbortSignal passed into a single worker's `runtime.runTask`
+ * call, layering an optional wall-clock deadline (`taskTimeoutMs`) on top of
+ * the caller/user abort signal so a hung worker cannot keep a team run alive
+ * forever. Reuses the same termination machinery as a user abort (see
+ * `runAgent` in subagent.ts: SIGTERM then SIGKILL escalation for native,
+ * abort-signal delivery for tmux) rather than adding a new kill path.
+ */
+function createTaskExecutionSignal(
+  baseSignal: AbortSignal | undefined,
+  taskTimeoutMs: number | undefined,
+): { signal: AbortSignal | undefined; clear: () => void } {
+  if (!taskTimeoutMs || taskTimeoutMs <= 0) {
+    return { signal: baseSignal, clear: () => {} };
+  }
+  const timeoutController = new AbortController();
+  const timer = setTimeout(() => {
+    timeoutController.abort(new Error(`worker exceeded taskTimeoutMs (${taskTimeoutMs}ms)`));
+  }, taskTimeoutMs);
+  timer.unref?.();
+  const signal = baseSignal ? AbortSignal.any([baseSignal, timeoutController.signal]) : timeoutController.signal;
+  return { signal, clear: () => clearTimeout(timer) };
+}
+
 async function runTeamFollowUpCommand(
   record: TeamRunRecord,
   opts: TeamRunOptions,
@@ -649,6 +693,7 @@ async function runTeamFollowUpCommand(
 
   let result: SingleResult;
   let wakeUpFailed = false;
+  const taskExecution = createTaskExecutionSignal(opts.signal, opts.taskTimeoutMs);
   try {
     const prompt = buildCommandWorkerPrompt(target, { ...command, status: "started", attempt: command.attempt }, record.goal);
     result = await runtime.runTask({
@@ -658,6 +703,7 @@ async function runTeamFollowUpCommand(
       agentName: target.agent,
       worktree: resolveTeamWorktreePolicy(opts),
       maxOutput: opts.maxOutput,
+      signal: taskExecution.signal,
       extraEnv: {
         [PI_TEAM_WORKER_ENV]: "1",
         PI_SUBAGENT_MAX_DEPTH: "1",
@@ -688,6 +734,8 @@ async function runTeamFollowUpCommand(
     };
     wakeUpFailed = true;
     results.push(result);
+  } finally {
+    taskExecution.clear();
   }
 
   const completedAt = now();
@@ -962,6 +1010,7 @@ export async function runTeam(opts: TeamRunOptions, runtime: TeamRuntime): Promi
         heartbeat.unref?.();
       }
       let result: SingleResult;
+      const taskExecution = createTaskExecutionSignal(opts.signal, opts.taskTimeoutMs);
       try {
         result = await runtime.runTask({
           task,
@@ -970,6 +1019,7 @@ export async function runTeam(opts: TeamRunOptions, runtime: TeamRuntime): Promi
           agentName: task.agent,
           worktree: runWithWorktree,
           maxOutput: opts.maxOutput,
+          signal: taskExecution.signal,
           extraEnv: {
             [PI_TEAM_WORKER_ENV]: "1",
             PI_SUBAGENT_MAX_DEPTH: "1",
@@ -977,6 +1027,7 @@ export async function runTeam(opts: TeamRunOptions, runtime: TeamRuntime): Promi
         }, index);
       } finally {
         if (heartbeat) clearInterval(heartbeat);
+        taskExecution.clear();
       }
 
       const summarize = runtime.summarizeResult ?? getResultSummaryText;

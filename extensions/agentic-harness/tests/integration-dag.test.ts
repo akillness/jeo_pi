@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   validateTeamTasks,
   scheduleBatches,
+  computeTaskDepths,
   runTeam,
 } from "../team.js";
 import { createTeamRunRecord } from "../team-state.js";
@@ -96,6 +97,20 @@ describe("integration: DAG validation and batch scheduling", () => {
     ];
 
     expect(() => validateTeamTasks(tasks)).toThrow(/circular/i);
+  });
+
+  it("computeTaskDepths/scheduleBatches reject a cycle directly instead of stack-overflowing", () => {
+    // Regression guard: these are exported and callable without validateTeamTasks
+    // running first. Before this guard, a cyclic blockedBy graph recursed until
+    // "RangeError: Maximum call stack size exceeded" instead of a clean error.
+    const tasks = [
+      makeTask("task-a", "worker-1", ["task-b"]),
+      makeTask("task-b", "worker-2", ["task-a"]),
+    ];
+
+    expect(() => computeTaskDepths(tasks)).toThrow(/circular/i);
+    expect(() => computeTaskDepths(tasks)).not.toThrow(/maximum call stack/i);
+    expect(() => scheduleBatches(tasks)).toThrow(/circular/i);
   });
 
   it("rejects a transitive cycle: A → B → C → A", () => {

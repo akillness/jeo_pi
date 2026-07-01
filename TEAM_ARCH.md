@@ -82,8 +82,15 @@ this document and the relevant tests.
    and follow-up commands only; they must not spawn subagents or run orchestration
    workflows. `WORKER_PROTOCOL`, `PI_TEAM_WORKER`, and `PI_SUBAGENT_MAX_DEPTH=1`
    enforce this boundary.
-2. **Fresh team runs create dependency-free parallel batches.** `blockedBy` is
-   rejected by `validateTeamTasks`; the MVP scheduler has no task dependency DAG.
+2. **Task dependencies form a validated DAG scheduled in batches.** `blockedBy`
+   references are validated by `validateTeamTasks` (unknown-task references and
+   cycles both throw before a run starts); `scheduleBatches`/`computeTaskDepths`
+   group tasks by dependency depth so each batch runs only after its
+   dependencies complete, with cycle detection duplicated defense-in-depth
+   inside `computeTaskDepths` itself so a cyclic graph fails fast instead of
+   recursing unbounded. `createDefaultTeamTasks` (fresh runs from a single
+   `goal`) still always produces dependency-free tasks; `blockedBy` is
+   populated by callers that construct `TeamTask[]` directly.
 3. **Every worker assignment is also a durable command.** Fresh assignments and
    later follow-ups are represented in `TeamRunRecord.commands[]`; `messages[]`
    remains audit/history for leader→worker inbox and worker→leader outbox/error
@@ -154,6 +161,23 @@ goal. Runtime validation enforces exactly one mode:
 `commandTarget` may match either a task id (`task-1`) or worker owner
 (`worker-1`).
 
+`taskTimeoutMs` bounds a single worker's wall-clock run time. When set,
+`createTaskExecutionSignal` builds the `AbortSignal` passed as `input.signal`
+into each `runtime.runTask` call: a per-task `AbortController` fires after
+`taskTimeoutMs` with `Error("worker exceeded taskTimeoutMs (<n>ms)")` as its
+abort reason, combined via `AbortSignal.any` with the caller's own abort
+signal (if any) so either one can end the task. The concrete `TeamRuntime`
+(`index.ts`) forwards this per-task signal into `runAgent` (`subagent.ts`)
+in place of the shared caller signal, so a hung worker (crashed pane, stalled
+network call) is terminated through the same SIGTERM→SIGKILL / tmux-signal
+path as a user abort — no new kill logic — and its task is marked `"failed"`
+with `result.errorMessage` set to that timeout reason's message (see
+`subagent.ts`'s abort-reason preference: a non-generic `AbortError` reason's
+`.message` wins over the generic "Subagent was aborted." fallback) instead of
+leaving the run hung forever. Unset/`0` preserves the previous no-deadline
+behavior. Both the fresh-run batch scheduler and the follow-up command path
+(`runTeamFollowUpCommand`) apply the same per-task deadline.
+
 ### `TeamTask`
 
 ```ts
@@ -164,7 +188,8 @@ goal. Runtime validation enforces exactly one mode:
   agent: "worker",
   owner: "worker-1",
   status: "pending" | "in_progress" | "completed" | "failed" | "blocked" | "interrupted",
-  blockedBy: [],            // MVP: must be empty
+  blockedBy: [],            // task ids this task waits on; validated as an acyclic DAG
+
   artifactRefs: [],
   worktreeRefs: [],
   resultSummary?: string,
@@ -256,7 +281,8 @@ runTeam(opts, runtime)
   │
   ├─ if follow-up mode: hand off to runTeamFollowUpCommand (see below)
   │
-  ├─ validateTeamTasks(blockedBy must be empty)
+  ├─ validateTeamTasks(blockedBy references exist + acyclic)
+
   │
   ├─ set run status "running" and persist
   │
@@ -270,7 +296,12 @@ runTeam(opts, runtime)
   │   else:
   │      assign task.terminal = { backend: "native" }
   │
-  ├─ for each pending task, concurrency-limited by MAX_CONCURRENCY:
+  ├─ for each pending task, concurrency-limited by MAX_CONCURRENCY
+  │      (or, when any task has blockedBy, scheduleBatches groups tasks by
+  │      dependency depth and runBatchesSequentially runs one batch at a time,
+  │      each batch still concurrency-limited by MAX_CONCURRENCY; a task whose
+  │      dependency failed/blocked is marked "blocked" instead of running):
+
   │      mark task in_progress
   │      enqueueTeamCommand(assignmentPrompt)
   │      acknowledge/start command immediately
@@ -460,10 +491,12 @@ marked failed, and the normal per-task/run failure path reports the problem.
 
 | Failure                                                | Effect                                                     | tmux session/panes                                            | Tests                                               |
 | ------------------------------------------------------ | ---------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------- |
-| `validateTeamTasks` rejects `blockedBy`                | offending task → `blocked`, run → `failed`                 | not created                                                   | `tests/team-state.test.ts`, `tests/team.test.ts`    |
+| `validateTeamTasks` rejects unknown/cyclic `blockedBy`  | offending task → `blocked`, run → `failed`                 | not created                                                   | `tests/team-state.test.ts`, `tests/team.test.ts`, `tests/integration-dag.test.ts` |
+| dependency task ends `failed`/`blocked`                | dependent task auto-marked `blocked` (`task_blocked` event), never dispatched | unaffected                                                     | `tests/integration-dag.test.ts`                     |
 | `createWorkerPanes` throws                             | every runnable task → `failed`, run → `failed`             | none, or best-effort cleanup if a session name exists         | `tests/team.test.ts`                                |
 | worker `runTask` rejects during follow-up wake-up      | command → `blocked`, target task → `blocked`               | unchanged                                                     | `tests/team.test.ts` / command tests                |
 | worker result is non-success                           | command → `failed`, task → `failed`                        | left until failed run end                                     | `tests/team.test.ts`                                |
+| worker exceeds `taskTimeoutMs`                          | worker aborted via combined signal, task → `failed` with timeout error message | terminated through the normal abort path             | `tests/team.test.ts`, `tests/subagent-process.test.ts` |
 | command transition has stale `statusVersion`           | append `command_conflict`, preserve existing command state | unchanged                                                     | `tests/team-state.test.ts`                          |
 | non-terminal command is stale on resume                | stale or retry depending on `resumeMode`                   | new panes only if tasks become pending                        | `tests/team-state.test.ts`                          |
 | run completes with any failed/blocked/interrupted task | final status `failed` or `interrupted`                     | preserved for post-mortem                                     | `tests/team.test.ts`                                |
