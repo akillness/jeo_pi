@@ -119,7 +119,13 @@ export function getPiInvocation(): { command: string; args: string[] } {
     }
     return { command: process.execPath, args: [] };
   }
-  return { command: "pi", args: [] };
+  // Compiled single-file harness binaries (e.g. an omp-engine build) have no
+  // resolvable argv[1] script, so the branch above never matches for them.
+  // PI_HARNESS_ENGINE_BINARY lets such a binary tell jeo-pi which command
+  // name to re-exec for subagents/tmux workers instead of hardcoding "pi",
+  // so the harness engine underneath jeo-pi's workflow layer stays swappable.
+  const engineBinary = process.env.PI_HARNESS_ENGINE_BINARY?.trim();
+  return { command: engineBinary && engineBinary.length > 0 ? engineBinary : "pi", args: [] };
 }
 
 export function extractFinalOutput(stdout: string): string {
@@ -323,6 +329,9 @@ export function buildTmuxLaunchEnv(env: Record<string, string | undefined>): Rec
     SUBAGENT_FORK_SESSION_ENV,
     SUBAGENT_CONTEXT_MODE_ENV,
     "PI_AGENTIC_SANDBOX_APPROVAL",
+    // Lets a nested subagent spawned from within a tmux worker resolve the
+    // same swappable harness engine binary as its parent (see getPiInvocation).
+    "PI_HARNESS_ENGINE_BINARY",
     // OMP auth-broker readiness: forward only non-secret coordinates/cache knobs.
     // Bearer tokens (OMP_AUTH_BROKER_TOKEN) must be read from the config dir by the
     // child process, not embedded in tmux launch scripts or process arguments.

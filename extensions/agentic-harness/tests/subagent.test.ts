@@ -126,6 +126,39 @@ describe("getPiInvocation", () => {
     const invocation = getPiInvocation();
     expect(invocation).toEqual({ command: "pi", args: [] });
   });
+  it("should prefer PI_HARNESS_ENGINE_BINARY over the hardcoded pi fallback", () => {
+    process.argv = [
+      "/usr/bin/node",
+      "/tmp/project/node_modules/vitest/vitest.mjs",
+      "run",
+    ];
+    const original = process.env.PI_HARNESS_ENGINE_BINARY;
+    process.env.PI_HARNESS_ENGINE_BINARY = "omp";
+    try {
+      const invocation = getPiInvocation();
+      expect(invocation).toEqual({ command: "omp", args: [] });
+    } finally {
+      if (original === undefined) delete process.env.PI_HARNESS_ENGINE_BINARY;
+      else process.env.PI_HARNESS_ENGINE_BINARY = original;
+    }
+  });
+
+  it("should fall back to pi when PI_HARNESS_ENGINE_BINARY is unset or blank", () => {
+    process.argv = [
+      "/usr/bin/node",
+      "/tmp/project/node_modules/vitest/vitest.mjs",
+      "run",
+    ];
+    const original = process.env.PI_HARNESS_ENGINE_BINARY;
+    process.env.PI_HARNESS_ENGINE_BINARY = "   ";
+    try {
+      const invocation = getPiInvocation();
+      expect(invocation).toEqual({ command: "pi", args: [] });
+    } finally {
+      if (original === undefined) delete process.env.PI_HARNESS_ENGINE_BINARY;
+      else process.env.PI_HARNESS_ENGINE_BINARY = original;
+    }
+  });
 });
 
 describe("Constants", () => {
@@ -217,6 +250,15 @@ describe("buildTmuxLaunchEnv", () => {
     });
     expect(env.OMP_AUTH_BROKER_TOKEN).toBeUndefined();
     expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+  });
+  it("should forward PI_HARNESS_ENGINE_BINARY to nested tmux workers", () => {
+    const env = buildTmuxLaunchEnv({
+      PI_HARNESS_ENGINE_BINARY: "omp",
+      GITHUB_TOKEN: "secret",
+    });
+
+    expect(env.PI_HARNESS_ENGINE_BINARY).toBe("omp");
+    expect(env.GITHUB_TOKEN).toBeUndefined();
   });
 });
 
