@@ -105,7 +105,7 @@ Eleven bundled extensions cooperate around the agentic-harness core:
 | **fff-search** | Git-aware fuzzy `find` / `grep` / `multi_grep` and `@` autocomplete |
 | **pi-lsp-client** | IDE-grade diagnostics, definitions, references, symbols, rename — 40+ language servers |
 | **pi-mcp-adapter** | Lazy MCP proxy — discover and call MCP tools without burning the context window |
-| **workspace-memory** | Save and recall structured findings, scoped per workspace |
+| **workspace-memory** | Save and recall structured findings, scoped per workspace — failure-first stall capture grounds the next retry in the real error, confirmed evidence, and unresolved candidates |
 | **session-loop** | Schedule recurring, self-cleaning prompts inside a session |
 | **nested-agents-md** | Inject nearby `AGENTS.md` conventions when reading files |
 | **pi-code-previews** | Syntax-highlighted previews for tool calls (powered by [shiki](https://shiki.style)) |
