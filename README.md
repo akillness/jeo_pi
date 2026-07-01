@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <strong>8</strong> bundled extensions · <strong>spec-*</strong> skill family · planner / architect / critic / executor agents · verifier-gated completion
+  <strong>11</strong> bundled extensions · <strong>spec-*</strong> skill family · planner / architect / critic / executor agents · verifier-gated completion
 </p>
 
 ---
@@ -36,7 +36,7 @@
 
 - [What is jeo-pi?](#what-is-jeo-pi)
 - [The spec-first loop](#the-spec-first-loop)
-- [Eight extensions, one loop](#eight-extensions-one-loop)
+- [Eleven extensions, one loop](#eleven-extensions-one-loop)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [spec-\* skill family](#the-spec--skill-family)
@@ -91,9 +91,9 @@ The contract is frozen as an **immutable seed**, executed against, evaluated hon
 
 ---
 
-## Eight extensions, _one loop_.
+## Eleven extensions, _one loop_.
 
-Eight bundled extensions cooperate around the agentic-harness core:
+Eleven bundled extensions cooperate around the agentic-harness core:
 
 <p align="center">
   <img src="assets/architecture-overview.svg" alt="jeo-pi extension architecture overview" width="90%">
@@ -109,6 +109,9 @@ Eight bundled extensions cooperate around the agentic-harness core:
 | **session-loop** | Schedule recurring, self-cleaning prompts inside a session |
 | **nested-agents-md** | Inject nearby `AGENTS.md` conventions when reading files |
 | **pi-code-previews** | Syntax-highlighted previews for tool calls (powered by [shiki](https://shiki.style)) |
+| **pi-scrollback** | Scroll the conversation history and copy the transcript to the clipboard inside the TUI |
+| **provider-auth** | Model-provider authentication wiring for pi |
+| **tool-flow** | Durable `turn_end` hooks — graphify structure updates and llm-wiki ingest |
 
 ---
 
@@ -618,6 +621,8 @@ extensions/
   pi-mcp-adapter/      # lazy MCP proxy
   pi-code-previews/    # syntax-highlighted tool-call previews (shiki)
   pi-scrollback/       # scroll conversation history + copy transcript (TUI)
+  provider-auth/       # model-provider authentication wiring
+  tool-flow/           # durable turn_end hooks: graphify + llm-wiki ingest
 docs/jeo-pi/           # spec-stack mapping and design notes
 docs/engineering-discipline/
   context/ plans/ reviews/   # Context Briefs, plans, review outputs
