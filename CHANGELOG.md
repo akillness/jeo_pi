@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.29.1](https://github.com/akillness/jeo-pi/compare/v1.29.0...v1.29.1) (2026-07-01)
+
+### Bug Fixes
+
+* **team:** bound worker wall-clock time and guard computeTaskDepths against cycles ([8c427c4](https://github.com/akillness/jeo-pi/commit/8c427c445e5fbda41c047fa4b57d1c86bc433e40)), closes [#2](https://github.com/akillness/jeo-pi/issues/2)
+
 ## [1.29.0](https://github.com/akillness/jeo-pi/compare/v1.28.0...v1.29.0) (2026-07-01)
 
 ### Features
